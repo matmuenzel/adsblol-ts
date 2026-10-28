@@ -1,0 +1,8 @@
+dist
+coverage
+src/generated
+spec
+pnpm-lock.yaml
+.superpowers
+docs
+CLAUDE.md
