@@ -31,7 +31,10 @@
     "test": "vitest run",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "gen": "openapi-typescript spec/openapi.json -o src/generated/schema.d.ts",
+    "spec:update": "tsx scripts/update-spec.ts && pnpm gen",
+    "spec:check": "tsx scripts/check-spec-drift.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
