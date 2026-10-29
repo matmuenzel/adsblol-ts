@@ -1,0 +1,34 @@
+{
+  "_motd": [],
+  "clients": {
+    "beast": [
+      {
+        "adsblol_my_url": "https://example.my.adsb.lol",
+        "connected_seconds": 48144,
+        "ip": "192.0.2.1",
+        "kbps": 0.51,
+        "messages_per_second": 2.856,
+        "ms": 40,
+        "positions": 22666,
+        "positions_per_second": 0.471,
+        "uuid": "00000000-0000-..."
+      }
+    ],
+    "mlat": [
+      {
+        "bad_sync_timeout": 0,
+        "connection": "example v3 dump1090 0.4.2 tcp none",
+        "outlier_percent": 0.1,
+        "peer_count": 33,
+        "privacy": false,
+        "user": "example",
+        "uuid": "00000000-0000-..."
+      }
+    ]
+  },
+  "global": {
+    "aircraft": 5687,
+    "beast": 6446,
+    "mlat": 9546
+  }
+}
