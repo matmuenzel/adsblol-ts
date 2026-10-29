@@ -1,4 +1,5 @@
 import { createTransport, type Transport, type TransportOptions } from "../transport/http.js";
+import { ValidationError } from "../errors/index.js";
 import type { Aircraft, AircraftResponse, Airport, ReceiverInfo } from "./types.js";
 import {
   assertLat,
@@ -14,11 +15,12 @@ import {
 } from "./validate.js";
 
 /**
- * Options for {@link AdsbLol}: base URL, timeouts, retries, auth and hooks.
+ * Options for {@link AdsbLol}: base URL, timeouts, retries, API key, auth and hooks.
  *
  * @example
  * ```ts
  * const options: AdsbLolOptions = { timeoutMs: 5000, maxAttempts: 2 };
+ * const withKey: AdsbLolOptions = { apiKey: process.env.ADSBLOL_API_KEY };
  * ```
  */
 export type AdsbLolOptions = TransportOptions;
@@ -193,17 +195,28 @@ export class AdsbLol {
     this.#transport = createTransport(options);
     const get = <T>(path: string, o?: RequestOptions): Promise<T> =>
       this.#transport.request<T>({ method: "GET", path, ...(o?.signal && { signal: o.signal }) });
-    const point = (q: PointQuery): string =>
-      `${pathSegment(assertLat(q.lat))}/${pathSegment(assertLon(q.lon))}/${pathSegment(assertRadiusNm(q.radiusNm))}`;
+    const point = (q: PointQuery): string => {
+      if (typeof q !== "object" || q === null) {
+        const msg = "query must be an object with lat, lon and radiusNm";
+        throw new ValidationError(
+          msg,
+          [{ loc: ["path", "query"], msg, type: "client_validation" }],
+          undefined,
+        );
+      }
+      return `${pathSegment(assertLat(q.lat), "lat")}/${pathSegment(assertLon(q.lon), "lon")}/${pathSegment(assertRadiusNm(q.radiusNm), "radiusNm")}`;
+    };
 
     this.aircraft = {
-      byHex: async (hex, o) => get(`/v2/hex/${pathSegment(normalizeHex(hex))}`, o),
+      byHex: async (hex, o) => get(`/v2/hex/${pathSegment(normalizeHex(hex), "hex")}`, o),
       byCallsign: async (callsign, o) =>
-        get(`/v2/callsign/${pathSegment(normalizeCallsign(callsign))}`, o),
+        get(`/v2/callsign/${pathSegment(normalizeCallsign(callsign), "callsign")}`, o),
       byRegistration: async (reg, o) =>
-        get(`/v2/reg/${pathSegment(normalizeRegistration(reg))}`, o),
-      byType: async (type, o) => get(`/v2/type/${pathSegment(normalizeAircraftType(type))}`, o),
-      bySquawk: async (squawk, o) => get(`/v2/sqk/${pathSegment(assertSquawk(squawk))}`, o),
+        get(`/v2/reg/${pathSegment(normalizeRegistration(reg), "registration")}`, o),
+      byType: async (type, o) =>
+        get(`/v2/type/${pathSegment(normalizeAircraftType(type), "type")}`, o),
+      bySquawk: async (squawk, o) =>
+        get(`/v2/sqk/${pathSegment(assertSquawk(squawk), "squawk")}`, o),
       near: async (q, o) => get(`/v2/point/${point(q)}`, o),
       closest: async (q, o) => {
         const res = await get<AircraftResponse>(`/v2/closest/${point(q)}`, o);
@@ -215,7 +228,7 @@ export class AdsbLol {
     };
     this.airports = {
       get: async (icao, o) =>
-        get<Airport | null>(`/api/0/airport/${pathSegment(normalizeAirportIcao(icao))}`, o),
+        get<Airport | null>(`/api/0/airport/${pathSegment(normalizeAirportIcao(icao), "icao")}`, o),
     };
     this.receiver = {
       me: async (o) => get("/0/me", o),

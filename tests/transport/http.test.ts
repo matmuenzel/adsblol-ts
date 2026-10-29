@@ -2,6 +2,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest
 import { delay, http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
 import {
+  AdsbLolError,
   HttpError,
   NetworkError,
   ParseError,
@@ -9,6 +10,7 @@ import {
   TimeoutError,
   ValidationError,
 } from "../../src/errors/index.js";
+import { invalidApiKeyBody } from "../fixtures/index.js";
 import { createTransport, type TransportOptions } from "../../src/transport/http.js";
 
 const BASE = "https://api.test";
@@ -270,6 +272,260 @@ describe("createTransport request", () => {
     await transport.request({ method: "GET", path: "/x" });
     expect(auth.mock.calls[0]![0]).toBeInstanceOf(Request);
     expect(header).toBe("Bearer fn-token");
+  });
+
+  describe("auth hardening", () => {
+    const KEY = "SECRET-KEY-42";
+
+    /** Asserts that no representation of the error contains the key. */
+    function expectNoLeak(err: unknown): void {
+      const e = err as Error;
+      expect(String(e)).not.toContain(KEY);
+      expect(e.message).not.toContain(KEY);
+      expect(JSON.stringify(e)).not.toContain(KEY);
+      expect(e.cause).toBeUndefined();
+      expect(String(e.stack)).not.toContain(KEY);
+    }
+
+    it("rejects an invalid auth header value at construction without leaking it", () => {
+      let err: unknown;
+      try {
+        createTransport({ baseUrl: BASE, auth: { header: "X-Api-Key", value: `${KEY}\nINJECT` } });
+      } catch (e) {
+        err = e;
+      }
+      expect(err).toBeInstanceOf(AdsbLolError);
+      expect((err as Error).message).toBe("Invalid auth header configuration");
+      expectNoLeak(err);
+    });
+
+    it("rejects an invalid auth header name at construction", () => {
+      expect(() =>
+        createTransport({ baseUrl: BASE, auth: { header: "bad name", value: KEY } }),
+      ).toThrow(new AdsbLolError("Invalid auth header configuration"));
+    });
+
+    it("wraps a throwing auth function without cause or key", async () => {
+      const { transport } = setup({
+        auth: () => {
+          throw new Error(`boom ${KEY}`);
+        },
+      });
+      const err = await transport.request({ method: "GET", path: "/x" }).catch((e: unknown) => e);
+      expect(err).toBeInstanceOf(AdsbLolError);
+      expect((err as Error).message).toBe("Auth function failed");
+      expectNoLeak(err);
+    });
+
+    it("wraps a rejecting auth function", async () => {
+      const { transport } = setup({ auth: () => Promise.reject(new Error(KEY)) });
+      const err = await transport.request({ method: "GET", path: "/x" }).catch((e: unknown) => e);
+      expect((err as Error).message).toBe("Auth function failed");
+      expectNoLeak(err);
+    });
+
+    it("rejects an auth function that returns no Request", async () => {
+      const { transport } = setup({ auth: (() => ({ key: KEY })) as unknown as () => Request });
+      const err = await transport.request({ method: "GET", path: "/x" }).catch((e: unknown) => e);
+      expect((err as Error).message).toBe("Auth function failed");
+      expectNoLeak(err);
+    });
+
+    it("sets redirect to error when auth is set, and keeps the default otherwise", async () => {
+      const redirects: string[] = [];
+      const spyFetch = async (input: RequestInfo | URL) => {
+        const req = input as Request;
+        redirects.push(req.redirect);
+        return new Response("{}");
+      };
+      for (const auth of [
+        { header: "X-Api-Key", value: KEY },
+        (r: Request) => new Request(r.url, { headers: r.headers }),
+        undefined,
+      ]) {
+        const t = createTransport({ baseUrl: BASE, fetch: spyFetch, ...(auth && { auth }) });
+        await t.request({ method: "GET", path: "/x" });
+      }
+      expect(redirects).toEqual(["error", "error", "follow"]);
+    });
+
+    it("surfaces a redirect as NetworkError without the key", async () => {
+      const { transport } = setup({
+        auth: { header: "X-Api-Key", value: KEY },
+        maxAttempts: 1,
+      });
+      server.use(
+        http.get(
+          `${BASE}/r`,
+          () =>
+            new HttpResponse(null, { status: 302, headers: { Location: "https://other.test/y" } }),
+        ),
+      );
+      const err = await transport.request({ method: "GET", path: "/r" }).catch((e: unknown) => e);
+      expect(err).toBeInstanceOf(NetworkError);
+      expect(String(err)).not.toContain(KEY);
+      expect(JSON.stringify(err)).not.toContain(KEY);
+      expect(String((err as Error).cause)).not.toContain(KEY);
+    });
+  });
+
+  describe("apiKey option", () => {
+    const KEY = "sk-lol-test-key";
+
+    function expectNoLeak(err: unknown): void {
+      const e = err as Error & { bodySnippet?: string };
+      for (const text of [String(e), e.message, JSON.stringify(e), String(e.stack)]) {
+        expect(text).not.toContain(KEY);
+      }
+      expect(e.bodySnippet ?? "").not.toContain(KEY);
+      expect(e.cause).toBeUndefined();
+    }
+
+    it("sends X-API-Key and no authorization header", async () => {
+      const { transport } = setup({ apiKey: KEY });
+      let seen: { key: string | null; authorization: string | null } | undefined;
+      server.use(
+        http.get(`${BASE}/ok`, ({ request }) => {
+          seen = {
+            key: request.headers.get("x-api-key"),
+            authorization: request.headers.get("authorization"),
+          };
+          return HttpResponse.json({});
+        }),
+      );
+      await transport.request({ method: "GET", path: "/ok" });
+      expect(seen).toEqual({ key: KEY, authorization: null });
+    });
+
+    it("rejects apiKey together with auth at construction", () => {
+      const auth = { header: "X-Other", value: "v" };
+      expect(() => createTransport({ baseUrl: BASE, apiKey: KEY, auth })).toThrow(
+        new AdsbLolError("Use either apiKey or auth, not both"),
+      );
+    });
+
+    it.each(["", "   ", "\t\n", 42, {}, null])("rejects invalid apiKey %j", (value) => {
+      let err: unknown;
+      try {
+        createTransport({ baseUrl: BASE, apiKey: value as unknown as string });
+      } catch (e) {
+        err = e;
+      }
+      expect(err).toBeInstanceOf(AdsbLolError);
+      expect((err as Error).message).toBe("Invalid apiKey: must be a non-empty string");
+      expect((err as Error).cause).toBeUndefined();
+    });
+
+    it("rejects an apiKey with CR/LF without leaking it", () => {
+      let err: unknown;
+      try {
+        createTransport({ baseUrl: BASE, apiKey: `${KEY}\r\nX-Evil: 1` });
+      } catch (e) {
+        err = e;
+      }
+      expect(err).toBeInstanceOf(AdsbLolError);
+      expect((err as Error).message).toBe("Invalid auth header configuration");
+      expectNoLeak(err);
+    });
+
+    it("surfaces a 401 as HttpError without retry or key leak", async () => {
+      const onRetry = vi.fn();
+      const { transport, sleep } = setup({ apiKey: KEY, hooks: { onRetry } });
+      const c = sequence("get", "/v2/hex/406d7b", [
+        status(401, {
+          body: invalidApiKeyBody,
+          headers: { "content-type": "text/plain" },
+        }),
+      ]);
+      const err = await transport
+        .request({ method: "GET", path: "/v2/hex/406d7b" })
+        .catch((e: unknown) => e);
+      expect(err).toBeInstanceOf(HttpError);
+      expect((err as HttpError).status).toBe(401);
+      expect((err as HttpError).bodySnippet).toBe("invalid api key\n");
+      expect(c.calls).toBe(1);
+      expect(sleep).not.toHaveBeenCalled();
+      expect(onRetry).not.toHaveBeenCalled();
+      expectNoLeak(err);
+    });
+
+    it("sets redirect to error when apiKey is set", async () => {
+      let redirect = "";
+      const spyFetch = async (input: RequestInfo | URL) => {
+        redirect = (input as Request).redirect;
+        return new Response("{}");
+      };
+      const t = createTransport({ baseUrl: BASE, fetch: spyFetch, apiKey: KEY });
+      await t.request({ method: "GET", path: "/x" });
+      expect(redirect).toBe("error");
+    });
+  });
+
+  describe("numeric option validation", () => {
+    it.each([
+      ["timeoutMs", NaN],
+      ["timeoutMs", Infinity],
+      ["timeoutMs", 0],
+      ["timeoutMs", -5],
+      ["maxAttempts", NaN],
+      ["maxAttempts", Infinity],
+      ["maxAttempts", 0],
+      ["maxAttempts", -1],
+      ["maxAttempts", 0.5],
+      ["maxAttempts", 2.5],
+      ["baseDelayMs", NaN],
+      ["baseDelayMs", -1],
+      ["baseDelayMs", Infinity],
+      ["maxDelayMs", NaN],
+      ["maxDelayMs", -1],
+      ["maxDelayMs", Infinity],
+      ["maxRetryAfterMs", NaN],
+      ["maxRetryAfterMs", -1],
+      ["maxRetryAfterMs", Infinity],
+      ["maxAttempts", "3"],
+    ])("rejects %s = %s", (name, value) => {
+      let err: unknown;
+      try {
+        createTransport({ baseUrl: BASE, [name]: value } as TransportOptions);
+      } catch (e) {
+        err = e;
+      }
+      expect(err).toBeInstanceOf(AdsbLolError);
+      expect((err as Error).message).toContain(name);
+    });
+
+    it("names the upper bound for an oversized timeoutMs", () => {
+      expect(() => createTransport({ baseUrl: BASE, timeoutMs: 1e12 })).toThrow(
+        /timeoutMs: must be a finite number > 0 and <= 2147483647/,
+      );
+    });
+
+    it("accepts valid boundary values", () => {
+      expect(() =>
+        createTransport({
+          baseUrl: BASE,
+          timeoutMs: 1,
+          maxAttempts: 1,
+          baseDelayMs: 0,
+          maxDelayMs: 0,
+          maxRetryAfterMs: 0,
+        }),
+      ).not.toThrow();
+    });
+  });
+
+  it("sends a User-Agent that links to the repository", async () => {
+    let ua: string | null = null;
+    const t = createTransport({
+      baseUrl: BASE,
+      fetch: async (input: RequestInfo | URL) => {
+        const req = input as Request;
+        ua = req.headers.get("user-agent");
+        return new Response("{}");
+      },
+    });
+    await t.request({ method: "GET", path: "/x" });
+    expect(ua).toBe("adsblol-ts (+https://github.com/matmuenzel/adsblol-ts)");
   });
 
   it("trims a trailing slash from baseUrl", async () => {

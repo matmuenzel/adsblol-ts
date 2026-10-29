@@ -18,9 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # The runtime target stays Node 18: tsup builds with target node18 and the
-        # combineSignals fallback test covers the code path without AbortSignal.any.
-        # The dev tooling (vitest 5) needs Node >= 22.12, so Node 18 and 20 are not in the matrix.
+        # Covers all supported Node versions (22 and 24). Older versions are end-of-life.
         node: [22, 24]
     steps:
       - uses: actions/checkout@v4

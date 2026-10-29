@@ -1,7 +1,14 @@
 import type { Aircraft } from "./types.js";
 
 /** Bits of `Aircraft.dbFlags` verified against the API. */
-export const DbFlag = { Military: 1, Pia: 4, Ladd: 8 } as const;
+export const DbFlag = {
+  /** Bit value 1: the aircraft is flagged as military. */
+  Military: 1,
+  /** Bit value 4: Privacy ICAO Address (PIA). */
+  Pia: 4,
+  /** Bit value 8: Limiting Aircraft Data Displayed (LADD). */
+  Ladd: 8,
+} as const;
 
 function hasFlag(a: Pick<Aircraft, "dbFlags">, flag: number): boolean {
   return ((a.dbFlags ?? 0) & flag) !== 0;

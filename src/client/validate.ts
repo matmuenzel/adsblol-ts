@@ -143,15 +143,16 @@ export function normalizeHex(hex: string): string {
 /**
  * Validates a transponder squawk code.
  *
- * @param squawk - Four octal digits, each 0 to 7, e.g. `"7700"`.
- * @returns The squawk code, unchanged.
- * @throws {ValidationError} If the value is not exactly four digits from 0 to 7.
+ * @param squawk - Four octal digits, each 0 to 7, e.g. `"7700"`. Surrounding whitespace is trimmed.
+ * @returns The trimmed squawk code.
+ * @throws {ValidationError} If the value is not a string of exactly four digits from 0 to 7.
  */
 export function assertSquawk(squawk: string): string {
-  if (typeof squawk !== "string" || !SQUAWK_PATTERN.test(squawk)) {
+  const trimmed = trimmedString(squawk, "squawk");
+  if (!SQUAWK_PATTERN.test(trimmed)) {
     fail("squawk", "squawk must be 4 octal digits (0-7)");
   }
-  return squawk;
+  return trimmed;
 }
 
 /**
@@ -209,11 +210,19 @@ export function normalizeAirportIcao(icao: string): string {
  * Encodes a value for use as one URL path segment.
  *
  * Applies `encodeURIComponent` to the string form of the value, so `/` and
- * spaces cannot change the request path.
+ * spaces cannot change the request path. The values `"."`, `".."` and the empty
+ * string are rejected: URL parsing resolves them as dot segments (also when
+ * written as `%2e`) or drops them, which would change the request path.
  *
  * @param value - Path parameter, e.g. a registration or an address.
+ * @param param - Parameter name used in the error. Default `"value"`.
  * @returns The percent-encoded path segment, e.g. `"A%20B%2FC"` for `"A B/C"`.
+ * @throws {ValidationError} If the string form of `value` is `""`, `"."` or `".."`.
  */
-export function pathSegment(value: string | number): string {
-  return encodeURIComponent(String(value));
+export function pathSegment(value: string | number, param = "value"): string {
+  const text = String(value);
+  if (text === "" || text === "." || text === "..") {
+    fail(param, `${param} must not be empty, "." or ".."`);
+  }
+  return encodeURIComponent(text);
 }

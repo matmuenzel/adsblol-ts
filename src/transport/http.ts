@@ -1,5 +1,5 @@
 import {
-  type AdsbLolError,
+  AdsbLolError,
   HttpError,
   NetworkError,
   ParseError,
@@ -11,7 +11,7 @@ import { computeBackoffMs, parseRetryAfter } from "./backoff.js";
 import { combineSignals } from "./signal.js";
 
 const DEFAULT_BASE_URL = "https://api.adsb.lol";
-const DEFAULT_USER_AGENT = "adsblol-ts (+https://www.npmjs.com/package/adsblol-ts)";
+const DEFAULT_USER_AGENT = "adsblol-ts (+https://github.com/matmuenzel/adsblol-ts)";
 const RETRYABLE_STATUSES = new Set([408, 429, 500, 502, 503, 504]);
 
 /**
@@ -19,6 +19,17 @@ const RETRYABLE_STATUSES = new Set([408, 429, 500, 502, 503, 504]);
  * function that receives the outgoing `Request` and returns the request to send
  * (for example with a signature header added). The header name and scheme are
  * not guessed; they are whatever you configure here.
+ *
+ * Security behavior:
+ * - A fixed header is validated once when the transport is created. An invalid
+ *   name or value throws an `AdsbLolError` with a fixed message that never
+ *   contains the value.
+ * - If an auth function throws, rejects or returns something that is not a
+ *   `Request`, an `AdsbLolError("Auth function failed")` is thrown without a
+ *   `cause`, because the original error might contain the key.
+ * - While `auth` is set, requests use `redirect: "error"`, so a custom key
+ *   header is never forwarded to another origin. A redirect response surfaces
+ *   as a `NetworkError`.
  */
 export type AuthOption =
   { header: string; value: string } | ((request: Request) => Request | Promise<Request>);
@@ -67,12 +78,22 @@ export interface TransportOptions {
    * makes the request fail immediately instead of waiting. Default `30000`.
    */
   maxRetryAfterMs?: number;
-  /** Authentication for requests, for example an API key header. */
+  /**
+   * adsb.lol API key, sent as the `X-API-Key` header. Keys are optional today and
+   * available at https://www.adsb.lol/mmb. The server answers an invalid key with
+   * HTTP 401 and the body `invalid api key`, which surfaces as an `HttpError` with
+   * `status === 401` (not retried). Equivalent to
+   * `auth: { header: "X-API-Key", value: apiKey }`: it cannot be combined with
+   * `auth`, requests use `redirect: "error"`, and the key never appears in URLs,
+   * hooks, logs or error messages. `undefined` means no key.
+   */
+  apiKey?: string;
+  /** Custom authentication for requests, for example for a proxy. Not combinable with `apiKey`. */
   auth?: AuthOption;
   /**
    * `User-Agent` header value, or `false` to omit it. Only sent when running in
    * Node.js, because browsers forbid setting it. Default
-   * `"adsblol-ts (+https://www.npmjs.com/package/adsblol-ts)"`.
+   * `"adsblol-ts (+https://github.com/matmuenzel/adsblol-ts)"`.
    */
   userAgent?: string | false;
   /** Observers for requests, responses and retries. */
@@ -137,6 +158,69 @@ function defaultSleep(ms: number, signal?: AbortSignal): Promise<void> {
   });
 }
 
+/** Largest delay the platform timers accept, in milliseconds (2^31 - 1). */
+const MAX_TIMER_MS = 2_147_483_647;
+
+/**
+ * Checks that an option is a finite number inside the given bounds.
+ *
+ * @param name - Option name used in the error message.
+ * @param value - Value to check (any runtime type).
+ * @param rule - Bounds and flags the value must satisfy.
+ * @throws {AdsbLolError} If the value is not valid. The message names the option.
+ */
+function assertOption(
+  name: string,
+  value: unknown,
+  rule: { min: number; exclusiveMin?: boolean; integer?: boolean; max?: number },
+): void {
+  const ok =
+    typeof value === "number" &&
+    Number.isFinite(value) &&
+    (rule.exclusiveMin ? value > rule.min : value >= rule.min) &&
+    (rule.max === undefined || value <= rule.max) &&
+    (!rule.integer || Number.isInteger(value));
+  if (!ok) {
+    const kind = rule.integer ? "an integer" : "a finite number";
+    const upper = rule.max === undefined ? "" : ` and <= ${rule.max}`;
+    const bound = `${rule.exclusiveMin ? ">" : ">="} ${rule.min}${upper}`;
+    throw new AdsbLolError(
+      `Invalid option ${name}: must be ${kind} ${bound}, got ${String(value)}`,
+    );
+  }
+}
+
+/**
+ * Checks a fixed auth header once, without ever including the value in an error.
+ *
+ * @throws {AdsbLolError} With a fixed message and no `cause` if name or value is invalid.
+ */
+function assertAuthHeader(auth: { header: string; value: string }): void {
+  try {
+    new Headers().set(auth.header, auth.value);
+  } catch {
+    throw new AdsbLolError("Invalid auth header configuration");
+  }
+}
+
+/** Header used for adsb.lol API keys. */
+const API_KEY_HEADER = "X-API-Key";
+
+/**
+ * Combines `apiKey` and `auth` into one auth setting; `apiKey` is treated like a fixed
+ * `X-API-Key` header.
+ *
+ * @throws {AdsbLolError} If both are set or `apiKey` is not a non-empty string. Messages never contain the key.
+ */
+function resolveAuth(options: TransportOptions): AuthOption | undefined {
+  if (options.apiKey === undefined) return options.auth;
+  if (options.auth) throw new AdsbLolError("Use either apiKey or auth, not both");
+  if (typeof options.apiKey !== "string" || options.apiKey.trim() === "") {
+    throw new AdsbLolError("Invalid apiKey: must be a non-empty string");
+  }
+  return { header: API_KEY_HEADER, value: options.apiKey };
+}
+
 /** True when running under Node.js, where setting `User-Agent` is allowed. */
 function isNode(): boolean {
   return typeof process !== "undefined" && !!process.versions?.node;
@@ -193,12 +277,19 @@ export function createTransport(
   const baseUrl = (options.baseUrl ?? DEFAULT_BASE_URL).replace(/\/+$/, "");
   const doFetch = options.fetch ?? ((input: Request) => globalThis.fetch(input));
   const timeoutMs = options.timeoutMs ?? 10_000;
-  const maxAttempts = Math.max(1, options.maxAttempts ?? 3);
+  const maxAttempts = options.maxAttempts ?? 3;
   const backoff = {
     baseDelayMs: options.baseDelayMs ?? 500,
     maxDelayMs: options.maxDelayMs ?? 8000,
   };
   const maxRetryAfterMs = options.maxRetryAfterMs ?? 30_000;
+  assertOption("timeoutMs", timeoutMs, { min: 0, exclusiveMin: true, max: MAX_TIMER_MS });
+  assertOption("maxAttempts", maxAttempts, { min: 1, integer: true });
+  assertOption("baseDelayMs", backoff.baseDelayMs, { min: 0 });
+  assertOption("maxDelayMs", backoff.maxDelayMs, { min: 0 });
+  assertOption("maxRetryAfterMs", maxRetryAfterMs, { min: 0 });
+  const auth = resolveAuth(options);
+  if (auth && typeof auth === "object") assertAuthHeader(auth);
   const userAgent = options.userAgent === undefined ? DEFAULT_USER_AGENT : options.userAgent;
   const hooks = options.hooks ?? {};
   const sleep = deps.sleep ?? defaultSleep;
@@ -213,13 +304,24 @@ export function createTransport(
       body = JSON.stringify(spec.body);
       headers.set("Content-Type", "application/json");
     }
-    if (options.auth && typeof options.auth === "object") {
-      headers.set(options.auth.header, options.auth.value);
+    if (auth && typeof auth === "object") {
+      headers.set(auth.header, auth.value);
     }
     const init: RequestInit = { method: spec.method, headers, body };
     if (signal) init.signal = signal;
+    // Never follow redirects with credentials: a custom key header would be forwarded cross-origin.
+    if (auth) init.redirect = "error";
     let request = new Request(url, init);
-    if (typeof options.auth === "function") request = await options.auth(request);
+    if (typeof auth === "function") {
+      try {
+        const result: unknown = await auth(request);
+        if (!(result instanceof Request)) throw new Error("not a Request");
+        request = result.redirect === "error" ? result : new Request(result, { redirect: "error" });
+      } catch {
+        // Fixed message and no cause: the original error may contain the key.
+        throw new AdsbLolError("Auth function failed");
+      }
+    }
     return request;
   }
 

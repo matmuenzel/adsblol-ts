@@ -1,12 +1,23 @@
 {
-  "name": "adsblol-ts",
+  "name": "@matmuenzel/adsblol-ts",
   "version": "0.0.0",
   "description": "Unofficial, zero-runtime-dependency TypeScript client for the adsb.lol API",
   "license": "MIT",
   "packageManager": "pnpm@10.18.2",
   "type": "module",
   "engines": {
-    "node": ">=18"
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/matmuenzel/adsblol-ts.git"
+  },
+  "homepage": "https://github.com/matmuenzel/adsblol-ts#readme",
+  "bugs": {
+    "url": "https://github.com/matmuenzel/adsblol-ts/issues"
   },
   "sideEffects": false,
   "files": [
@@ -29,6 +40,7 @@
   },
   "scripts": {
     "build": "tsup",
+    "prepublishOnly": "pnpm build",
     "test": "vitest run",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
@@ -36,9 +48,13 @@
     "gen": "openapi-typescript spec/openapi.json -o src/generated/schema.d.ts",
     "spec:update": "tsx scripts/update-spec.ts && pnpm gen",
     "spec:check": "tsx scripts/check-spec-drift.ts",
-    "smoke": "tsx scripts/live-smoke.ts"
+    "smoke": "tsx scripts/live-smoke.ts",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "pnpm build && changeset publish"
   },
   "devDependencies": {
+    "@changesets/cli": "^3.0.3",
     "@eslint/js": "^10.0.1",
     "@types/node": "^26.6.5",
     "eslint": "^10.13.0",
@@ -50,5 +66,15 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.72.1",
     "vitest": "^5.0.5"
-  }
+  },
+  "keywords": [
+    "adsb",
+    "adsb.lol",
+    "ads-b",
+    "aircraft",
+    "flight-tracking",
+    "aviation",
+    "typescript",
+    "api-client"
+  ]
 }

@@ -113,6 +113,11 @@ describe("assertSquawk", () => {
     expectValidationError(() => assertSquawk(squawk), "squawk");
   });
 
+  it("trims surrounding whitespace", () => {
+    expect(assertSquawk("7700 ")).toBe("7700");
+    expect(assertSquawk(" 1200\n")).toBe("1200");
+  });
+
   it("rejects a non-string runtime value", () => {
     expectValidationError(() => assertSquawk(7700 as unknown as string), "squawk");
   });
@@ -174,5 +179,14 @@ describe("pathSegment", () => {
 
   it("stringifies numbers before encoding", () => {
     expect(pathSegment(1234)).toBe("1234");
+  });
+
+  it.each([".", "..", ""])("rejects the dot segment or empty value %j", (value) => {
+    expectValidationError(() => pathSegment(value, "registration"), "registration");
+  });
+
+  it("allows dots inside a longer segment", () => {
+    expect(pathSegment("a..b")).toBe("a..b");
+    expect(pathSegment("...")).toBe("...");
   });
 });

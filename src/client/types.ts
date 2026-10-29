@@ -194,7 +194,7 @@ export interface Aircraft {
   oat?: number;
   /** Total air temperature in degrees Celsius. */
   tat?: number;
-  /** Timestamp (readsb internal) before which GPS was known to be OK. Semantics are not documented by the API. */
+  /** Readsb-internal value related to the last time GPS was known to be OK. Unit and semantics are not documented by the API. */
   gpsOkBefore?: number;
   /** Latitude of the last GPS-OK position in decimal degrees. Not documented by the API. */
   gpsOkLat?: number;
@@ -202,9 +202,9 @@ export interface Aircraft {
   gpsOkLon?: number;
   /** Last known position, present when the current position is stale. */
   lastPosition?: LastPosition;
-  /** Receiver-reconciled latitude estimate in decimal degrees (readsb `rr_lat`, rough position). */
+  /** Rough estimated latitude in decimal degrees (readsb `rr_lat`), used when no real position is available. */
   rr_lat?: number;
-  /** Receiver-reconciled longitude estimate in decimal degrees (readsb `rr_lon`, rough position). */
+  /** Rough estimated longitude in decimal degrees (readsb `rr_lon`), used when no real position is available. */
   rr_lon?: number;
   /** Total number of Mode S messages received from this aircraft. */
   messages: number;
@@ -232,7 +232,7 @@ export interface AircraftResponse {
   now: number;
   /** Cache time of the data, in milliseconds since the Unix epoch. */
   ctime: number;
-  /** Processing time, in milliseconds since the Unix epoch (observed as 0). */
+  /** Processing time of the request on the server, as a duration in milliseconds (not an epoch; observed as 0). */
   ptime: number;
   /** Number of aircraft in `ac`. */
   total: number;

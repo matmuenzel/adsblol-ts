@@ -82,4 +82,17 @@ describe("error class hierarchy", () => {
     expect(err.issues[0]?.loc).toEqual([]);
     expect(err.issues[0]?.msg).toBe("garbage");
   });
+
+  it("ValidationError.fromResponseBody caps the message and fallback text for huge bodies", () => {
+    const huge = "x".repeat(10_000);
+    const fromText = ValidationError.fromResponseBody(huge, 422);
+    expect(fromText.issues[0]?.msg.length).toBeLessThanOrEqual(500);
+    expect(fromText.message.length).toBeLessThanOrEqual(500);
+    const fromDetail = ValidationError.fromResponseBody(
+      { detail: [{ loc: ["query", "q"], msg: huge, type: "value_error" }] },
+      422,
+    );
+    expect(fromDetail.message.length).toBeLessThanOrEqual(500);
+    expect(fromDetail.issues[0]?.msg).toBe(huge);
+  });
 });

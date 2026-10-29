@@ -1,9 +1,9 @@
 {
   "ac": [
     {
-      "hex": "a09298",
+      "hex": "a00003",
       "type": "adsb_icao",
-      "flight": "FFL1630 ",
+      "flight": "TEST03  ",
       "dbFlags": 4,
       "alt_baro": 41025,
       "alt_geom": 41950,
@@ -16,8 +16,8 @@
       "nav_qnh": 1013.6,
       "nav_altitude_mcp": 41024,
       "nav_modes": ["autopilot", "althold", "tcas"],
-      "lat": 38.41742,
-      "lon": -106.763367,
+      "lat": 0.41742,
+      "lon": -32.763367,
       "nic": 8,
       "rc": 186,
       "seen_pos": 0.416,

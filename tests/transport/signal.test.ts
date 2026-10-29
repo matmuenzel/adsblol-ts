@@ -20,35 +20,18 @@ describe("combineSignals", () => {
     expect(combined.aborted).toBe(true);
   });
 
-  describe("without AbortSignal.any", () => {
-    it("still aborts when one signal aborts, and propagates the reason", () => {
-      const original = Object.getOwnPropertyDescriptor(AbortSignal, "any");
-      try {
-        Object.defineProperty(AbortSignal, "any", { value: undefined, configurable: true });
-        const a = new AbortController();
-        const b = new AbortController();
-        const combined = combineSignals([a.signal, b.signal])!;
-        expect(combined.aborted).toBe(false);
-        const reason = new Error("stop");
-        a.abort(reason);
-        expect(combined.aborted).toBe(true);
-        expect(combined.reason).toBe(reason);
-      } finally {
-        if (original) Object.defineProperty(AbortSignal, "any", original);
-      }
-    });
+  it("propagates the reason of the aborting signal", () => {
+    const a = new AbortController();
+    const b = new AbortController();
+    const combined = combineSignals([a.signal, b.signal])!;
+    const reason = new Error("stop");
+    a.abort(reason);
+    expect(combined.reason).toBe(reason);
+  });
 
-    it("is aborted immediately if an input is already aborted", () => {
-      const original = Object.getOwnPropertyDescriptor(AbortSignal, "any");
-      try {
-        Object.defineProperty(AbortSignal, "any", { value: undefined, configurable: true });
-        const a = new AbortController();
-        a.abort();
-        const combined = combineSignals([new AbortController().signal, a.signal])!;
-        expect(combined.aborted).toBe(true);
-      } finally {
-        if (original) Object.defineProperty(AbortSignal, "any", original);
-      }
-    });
+  it("is aborted immediately if an input is already aborted", () => {
+    const a = new AbortController();
+    a.abort();
+    expect(combineSignals([new AbortController().signal, a.signal])!.aborted).toBe(true);
   });
 });

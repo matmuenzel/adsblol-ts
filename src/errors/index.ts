@@ -9,6 +9,9 @@
 /** Maximum number of response body characters kept in {@link HttpError.bodySnippet}. */
 const BODY_SNIPPET_MAX_LENGTH = 500;
 
+/** Maximum length of a {@link ValidationError} summary message and of fallback issue text. */
+const MESSAGE_MAX_LENGTH = 500;
+
 /**
  * Base class for all errors thrown by the client.
  */
@@ -206,16 +209,16 @@ function summarize(issues: ValidationIssue[]): string {
   const parts = issues.map((issue) =>
     issue.loc.length > 0 ? `${issue.loc.join(".")}: ${issue.msg}` : issue.msg,
   );
-  return `Invalid request: ${parts.join("; ")}`;
+  return `Invalid request: ${parts.join("; ")}`.slice(0, MESSAGE_MAX_LENGTH);
 }
 
-/** Returns a string form of an arbitrary body value for use as a message. */
+/** Returns a string form of an arbitrary body value for use as a message, capped in length. */
 function bodyText(value: unknown): string {
-  if (typeof value === "string") return value;
+  if (typeof value === "string") return value.slice(0, MESSAGE_MAX_LENGTH);
   try {
-    return JSON.stringify(value) ?? String(value);
+    return (JSON.stringify(value) ?? String(value)).slice(0, MESSAGE_MAX_LENGTH);
   } catch {
-    return String(value);
+    return String(value).slice(0, MESSAGE_MAX_LENGTH);
   }
 }
 

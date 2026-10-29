@@ -86,6 +86,25 @@ describe("AdsbLol aircraft", () => {
     expect(paths).toEqual([]);
   });
 
+  it("rejects dot segments without sending a request", async () => {
+    const paths = record(fixtures.empty);
+    const c = client();
+    await expect(c.aircraft.byCallsign("..")).rejects.toBeInstanceOf(ValidationError);
+    await expect(c.aircraft.byRegistration(".")).rejects.toBeInstanceOf(ValidationError);
+    await expect(c.aircraft.byType("..")).rejects.toBeInstanceOf(ValidationError);
+    await expect(c.aircraft.byType(" .. ")).rejects.toBeInstanceOf(ValidationError);
+    expect(paths).toEqual([]);
+  });
+
+  it("rejects a non-object query with a ValidationError", async () => {
+    const paths = record(fixtures.empty);
+    const c = client();
+    await expect(c.aircraft.near(undefined as never)).rejects.toBeInstanceOf(ValidationError);
+    await expect(c.aircraft.near(null as never)).rejects.toBeInstanceOf(ValidationError);
+    await expect(c.aircraft.closest("x" as never)).rejects.toBeInstanceOf(ValidationError);
+    expect(paths).toEqual([]);
+  });
+
   it("uses the configured base URL", async () => {
     let seen = "";
     server.use(
