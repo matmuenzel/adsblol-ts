@@ -1,0 +1,83 @@
+name: Spec drift
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  spec-drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # pnpm version comes from the "packageManager" field in package.json.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # spec:check exits 1 on drift and also exits non-zero when the spec cannot be fetched.
+      # The output goes to a file so that the drift case can be told apart from a fetch failure.
+      - id: spec
+        name: Compare live spec with snapshot
+        continue-on-error: true
+        run: pnpm spec:check > drift.txt 2>&1
+
+      - id: classify
+        name: Classify failure
+        if: steps.spec.outcome == 'failure'
+        run: |
+          if grep -q "Spec drift detected" drift.txt; then
+            echo "drift=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "drift=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Ensure spec-drift label exists
+        if: steps.classify.outputs.drift == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh label create spec-drift --force \
+            --color "d93f0b" \
+            --description "Upstream adsb.lol OpenAPI spec differs from the stored snapshot"
+
+      - name: Open issue unless one is already open
+        if: steps.classify.outputs.drift == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          open_count=$(gh issue list --label spec-drift --state open --json number --jq length)
+          if [ "$open_count" -eq 0 ]; then
+            body="$RUNNER_TEMP/issue-body.md"
+            {
+              echo "The weekly check found that https://api.adsb.lol/api/openapi.json differs from spec/openapi.json."
+              echo
+              echo "Workflow run: $RUN_URL"
+              echo
+              echo '```'
+              head -c 60000 drift.txt
+              echo '```'
+            } > "$body"
+            gh issue create --label spec-drift \
+              --title "Spec drift: adsb.lol OpenAPI spec changed ($(date -u +%F))" \
+              --body-file "$body"
+          else
+            echo "An open spec-drift issue already exists, not creating another one."
+          fi
+
+      - name: Fail the job if the check failed
+        if: steps.spec.outcome == 'failure'
+        run: exit 1

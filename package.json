@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "description": "Unofficial, zero-runtime-dependency TypeScript client for the adsb.lol API",
   "license": "MIT",
+  "packageManager": "pnpm@10.18.2",
   "type": "module",
   "engines": {
     "node": ">=18"
@@ -34,7 +35,8 @@
     "format": "prettier --write .",
     "gen": "openapi-typescript spec/openapi.json -o src/generated/schema.d.ts",
     "spec:update": "tsx scripts/update-spec.ts && pnpm gen",
-    "spec:check": "tsx scripts/check-spec-drift.ts"
+    "spec:check": "tsx scripts/check-spec-drift.ts",
+    "smoke": "tsx scripts/live-smoke.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
