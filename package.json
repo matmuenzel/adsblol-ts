@@ -1,6 +1,6 @@
 {
   "name": "@matmuenzel/adsblol-ts",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Unofficial, zero-runtime-dependency TypeScript client for the adsb.lol API",
   "license": "MIT",
   "packageManager": "pnpm@10.18.2",
