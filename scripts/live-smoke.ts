@@ -3,14 +3,14 @@ import { AdsbLol } from "../src/index.js";
 /**
  * Manual live check against the real adsb.lol API. Not run in CI.
  *
- * Makes at most 5 requests (this script makes 4) with at least 2 s between them. Client retries
+ * Makes at most 6 requests (this script makes 4, or 5 with SMOKE_REAPI=1) with at least 2 s between them. Client retries
  * are disabled so that the budget holds. Exit code 1 if any step fails.
  */
 
 const BASE_URL = "https://api.adsb.lol";
 const USER_AGENT = "adsblol-ts live-smoke";
 const MIN_GAP_MS = 2000;
-const MAX_REQUESTS = 5;
+const MAX_REQUESTS = 6;
 const HEATHROW = { lat: 51.47, lon: -0.45, radiusNm: 10 } as const;
 
 type Status = "OK" | "FAIL" | "SKIP";
@@ -73,7 +73,7 @@ function describeDifferences(left: Set<string>, right: Set<string>): string {
 }
 
 /**
- * Entry point. Runs the four steps in order and sets the exit code on failure.
+ * Entry point. Runs the steps in order and sets the exit code on failure.
  */
 async function main(): Promise<void> {
   // maxAttempts 1 disables client retries, so the request budget cannot be exceeded.
@@ -169,6 +169,34 @@ async function main(): Promise<void> {
       return airport.name === "London Heathrow Airport"
         ? { status: "OK", detail: airport.name }
         : { status: "FAIL", detail: `unexpected name "${airport.name}"` };
+    }),
+  );
+
+  outcomes.push(
+    await runStep("reApi.circle (Heathrow, 10 nm, experimental)", async () => {
+      if (process.env.SMOKE_REAPI !== "1") {
+        return {
+          status: "SKIP",
+          detail: "set SMOKE_REAPI=1 (needs a feeder key in ADSBLOL_API_KEY)",
+        };
+      }
+      // The key is passed to the client only and is never printed.
+      const reClient = new AdsbLol({
+        userAgent: USER_AGENT,
+        maxAttempts: 1,
+        apiKey: process.env.ADSBLOL_API_KEY,
+      });
+      await beforeRequest();
+      const res = await reClient.reApi.circle(HEATHROW);
+      const raw: unknown = res;
+      const now = typeof raw === "object" && raw !== null && "now" in raw ? raw.now : undefined;
+      if (!Array.isArray(res.ac)) {
+        return { status: "FAIL", detail: "ac is not an array" };
+      }
+      if (typeof now !== "number" || !(now > 1e12)) {
+        return { status: "FAIL", detail: "now is not a millisecond timestamp" };
+      }
+      return { status: "OK", detail: `${res.ac.length} aircraft, now in ms` };
     }),
   );
 
