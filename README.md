@@ -65,6 +65,25 @@ if (airport) {
 }
 ```
 
+### Traces
+
+```ts
+import { AdsbLol } from "@matmuenzel/adsblol-ts";
+
+const adsb = new AdsbLol();
+
+// `trace` is the full stored trace, `recentTrace` the recent part. Both return null on 404.
+const trace = await adsb.aircraft.trace("486802");
+
+if (trace) {
+  for (const point of trace.points) {
+    console.log(new Date(point.time), point.lat, point.lon, point.altitudeFt);
+  }
+}
+```
+
+Trace endpoints are metered and take a plain six-digit ICAO hex (no `~` prefix). The raw trace is a compact array format, and `parseTrace()` also reads trace files from [`adsblol/globe_history`](https://github.com/adsblol/globe_history).
+
 ### Error handling
 
 ```ts
@@ -109,7 +128,7 @@ const adsb = new AdsbLol({
   baseUrl: "https://api.adsb.lol", // default
   timeoutMs: 5000, // per attempt, default 10000
   maxAttempts: 3, // including the first attempt, default 3
-  apiKey: process.env.ADSBLOL_API_KEY, // optional, sent as X-API-Key (see Auth)
+  apiKey: process.env.ADSBLOL_API_KEY, // optional, sent as x-api-key (see Auth)
 });
 ```
 
@@ -133,13 +152,13 @@ Requests are retried on network errors, timeouts, and HTTP `408`, `429`, `500`, 
 
 ### Auth
 
-Pass an API key with `apiKey`; the client sends it as the `X-API-Key` header:
+Pass an API key with `apiKey`. The spec documents the key as the `x-api-key` header; the client sends it as `x-api-key` (header names are case-insensitive):
 
 ```ts
 const adsb = new AdsbLol({ apiKey: process.env.ADSBLOL_API_KEY });
 ```
 
-Keys are optional today: requests without a key work. Get one at [adsb.lol/mmb](https://www.adsb.lol/mmb) (anonymous keys valid for a month, long-lived keys for feeders whose station adsb.lol can see, and keys on request for other projects). The key is only checked if you send one: an invalid key is answered with HTTP `401` and the body `invalid api key`. It is not retried and surfaces as an `HttpError`:
+Keys are optional today: requests without a key work (500 requests per day per IP, see [Rate limits](#rate-limits)). Get one at [adsb.lol/mmb](https://www.adsb.lol/mmb) (anonymous keys valid for a month, long-lived keys for feeders whose station adsb.lol can see, and keys on request for other projects). The key is only checked if you send one: an invalid key is answered with HTTP `401` and the body `invalid api key`. It is not retried and surfaces as an `HttpError`:
 
 ```ts
 import { HttpError } from "@matmuenzel/adsblol-ts";
@@ -203,19 +222,45 @@ const adsb = new AdsbLol({
 });
 ```
 
+## re-api (feeders, experimental)
+
+`adsb.reApi` queries the [re-api](https://www.adsb.lol/docs/feeders-only/re-api/), readsb's query interface at `https://re-api.adsb.lol`. It is **experimental**:
+
+- Access needs a feeder key (`apiKey`). A feeder IP alone was observed to get HTTP 401 `api key required`.
+- The response shape follows the readsb `jv2` documentation and has not yet been verified against a live 200 response.
+- The server answers auth problems with HTTP 401 and one of the texts `api key required`, `api key expired` or `invalid api key`. They surface as an `HttpError` with `status === 401`.
+- Use `reApiBaseUrl` to point the re-api at another host. All other options, including `apiKey`, apply to both hosts.
+
+```ts
+const adsb = new AdsbLol({ apiKey: process.env.ADSBLOL_API_KEY });
+
+const { ac } = await adsb.reApi.circle(
+  { lat: 51.47, lon: -0.45, radiusNm: 10 },
+  { military: true, aboveAltBaroFt: 20000, types: ["A400"] },
+);
+```
+
+Methods: `circle`, `closest`, `box`, `all`, `findHex`, `findCallsign`, `findRegistration`, `findType`, `findSquawk`. Each takes an optional `ReApiFilter` as second-to-last argument.
+
 ## Rate limits
 
-The API enforces rate limits, but adsb.lol does not publish them. They are most likely dynamic and may depend on current load, so treat the values below as a snapshot, not a guarantee. They were observed once in response headers (`x-ratelimit-limit`):
+The adsb.lol API publishes its quotas in the OpenAPI spec. Each operation carries an `x-quota` value: `metered` operations count against a quota, `free` operations do not. Metered: `/v2/*` and `/1/trace/*` (and `/api/0/airport/{icao}`). Free: `/0/me`, `/0/my` and `/api/0/routeset`.
 
-- 4 requests per second
-- 60 requests per minute
-- 500 requests per day
+Quotas by key tier:
+
+- no key: 500 requests per day per IP
+- anonymous key (valid 30 days, no account): 500 requests per day
+- adhoc key (free, request form): 1,000 requests per day
+- feeder key (free, for feeding the network): 7,200 requests per day, 20 GB per month, and access to the [re-api](https://www.adsb.lol/docs/feeders-only/re-api/)
+- sponsor plans: up to 360,000 requests per day, see [adsb.lol/sponsor](https://www.adsb.lol/sponsor)
+
+Without a key, the daily window is a fixed 24-hour bucket per IP, not midnight UTC. Keyed traffic is limited per key on the tier's own windows. Over quota, the API answers with HTTP `429` and a `Retry-After` header. The client retries `429` with backoff and honours `Retry-After`, then surfaces a `RateLimitError` if the retries run out. When the daily quota is exhausted, `Retry-After` is above `maxRetryAfterMs` (default 30000 ms), so the client throws a `RateLimitError` immediately instead of waiting.
 
 adsb.lol is a free, community-run service. Please be considerate:
 
 - Request only what you need, and do not poll more often than your use case requires.
 - Cache responses where you can, especially when several users of your app ask for the same data.
-- Back off when you get HTTP 429. The client already retries with backoff and honours `Retry-After`; do not wrap it in additional tight retry loops.
+- Back off when you get HTTP 429; do not wrap the client in additional tight retry loops.
 - For production use, contact the adsb.lol maintainers first.
 
 ## Browser

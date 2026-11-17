@@ -42,7 +42,95 @@ function sequence(method: "get" | "post", path: string, responses: (() => Respon
 const status = (code: number, init?: ResponseInit & { body?: string }) => () =>
   new HttpResponse(init?.body ?? null, { status: code, ...init });
 
+/** A response whose body stream fails when read. */
+const unreadable = (code: number) => () =>
+  new Response(
+    new ReadableStream({
+      start(c) {
+        c.error(new TypeError("terminated"));
+      },
+    }),
+    { status: code },
+  );
+
 describe("createTransport request", () => {
+  it("turns an unreadable non-2xx body into the normal status error", async () => {
+    const sleep = vi.fn(async () => {});
+    const fetchFn = vi.fn(
+      async () =>
+        new Response(
+          new ReadableStream({
+            start(c) {
+              c.error(new TypeError("terminated"));
+            },
+          }),
+          { status: 404, headers: { "content-type": "text/html" } },
+        ),
+    );
+    const transport = createTransport(
+      { baseUrl: BASE, fetch: fetchFn as unknown as typeof fetch },
+      { sleep, random: () => 1 },
+    );
+    const err = await transport.request({ method: "GET", path: "/x" }).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(HttpError);
+    expect((err as HttpError).status).toBe(404);
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+    expect(sleep).not.toHaveBeenCalled();
+  });
+
+  it("retries a 503 with an unreadable body and ends as HttpError 503", async () => {
+    const sleep = vi.fn(async () => {});
+    const fetchFn = vi.fn(async () => unreadable(503)());
+    const transport = createTransport(
+      { baseUrl: BASE, fetch: fetchFn as unknown as typeof fetch },
+      { sleep, random: () => 1 },
+    );
+    const err = await transport.request({ method: "GET", path: "/x" }).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(HttpError);
+    expect((err as HttpError).status).toBe(503);
+    expect(fetchFn).toHaveBeenCalledTimes(3);
+    expect(sleep).toHaveBeenCalledTimes(2);
+  });
+
+  it("rejects with signal.reason when aborted while reading a non-2xx body", async () => {
+    const ac = new AbortController();
+    const reason = new Error("stop");
+    const fetchFn = vi.fn(
+      async () =>
+        new Response(
+          new ReadableStream({
+            start(c) {
+              ac.abort(reason);
+              c.error(new TypeError("terminated"));
+            },
+          }),
+          { status: 500 },
+        ),
+    );
+    const { sleep } = setup();
+    const transport = createTransport(
+      { baseUrl: BASE, fetch: fetchFn as unknown as typeof fetch },
+      { sleep, random: () => 1 },
+    );
+    await expect(transport.request({ method: "GET", path: "/x", signal: ac.signal })).rejects.toBe(
+      reason,
+    );
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+  });
+
+  it("turns an unreadable 2xx body into a retried NetworkError", async () => {
+    const sleep = vi.fn(async () => {});
+    const fetchFn = vi.fn(async () => unreadable(200)());
+    const transport = createTransport(
+      { baseUrl: BASE, fetch: fetchFn as unknown as typeof fetch },
+      { sleep, random: () => 1 },
+    );
+    await expect(transport.request({ method: "GET", path: "/x" })).rejects.toBeInstanceOf(
+      NetworkError,
+    );
+    expect(fetchFn).toHaveBeenCalledTimes(3);
+  });
+
   it("retries a 503 and succeeds", async () => {
     const onRetry = vi.fn();
     const { transport, sleep } = setup({ hooks: { onRetry } });

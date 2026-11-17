@@ -20,6 +20,8 @@ const RADIUS_MAX_NM = 250;
 
 /** ICAO 24-bit address: optional `~` prefix (non-ICAO), then six hex digits. */
 const HEX_PATTERN = /^~?[0-9a-f]{6}$/;
+/** Strict ICAO 24-bit address without the `~` prefix, as the trace endpoints require. */
+const ICAO_HEX_PATTERN = /^[0-9a-f]{6}$/;
 /** Squawk code: four octal digits. */
 const SQUAWK_PATTERN = /^[0-7]{4}$/;
 /** ICAO airport code: four alphanumeric characters. */
@@ -136,6 +138,24 @@ export function normalizeHex(hex: string): string {
   const normalized = trimmedString(hex, "hex").toLowerCase();
   if (!HEX_PATTERN.test(normalized)) {
     fail("hex", "hex must be 6 hex digits, optionally prefixed with ~");
+  }
+  return normalized;
+}
+
+/**
+ * Normalizes a strict ICAO 24-bit hex address, without the `~` prefix of non-ICAO addresses.
+ *
+ * Trims whitespace and lowercases the value. Used by the trace endpoints, whose spec pattern
+ * is six hex digits only.
+ *
+ * @param hex - Six hex digits, e.g. `"4CA87C"`.
+ * @returns The normalized address, e.g. `"4ca87c"`.
+ * @throws {ValidationError} If the value is not a string of exactly six hex digits after trimming (`~` is rejected).
+ */
+export function normalizeIcaoHex(hex: string): string {
+  const normalized = trimmedString(hex, "hex").toLowerCase();
+  if (!ICAO_HEX_PATTERN.test(normalized)) {
+    fail("hex", "hex must be 6 hex digits");
   }
   return normalized;
 }

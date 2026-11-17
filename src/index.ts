@@ -13,3 +13,6 @@ export {
   ValidationError,
 } from "./errors/index.js";
 export type { ValidationIssue } from "./errors/index.js";
+export { parseTrace } from "./client/trace.js";
+export type { RawTrace, RawTracePoint, Trace, TracePoint } from "./client/trace.js";
+export type { BoxQuery, ReApiFilter } from "./client/reapi.js";

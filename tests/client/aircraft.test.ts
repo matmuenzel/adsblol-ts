@@ -3,6 +3,7 @@ import {
   DbFlag,
   altitudeFt,
   callsign,
+  isInteresting,
   isLadd,
   isMilitary,
   isOnGround,
@@ -17,7 +18,20 @@ const [airborne, grounded, noFlight] = point as [Aircraft, Aircraft, Aircraft];
 
 describe("DbFlag", () => {
   it("has the observed bit values", () => {
-    expect(DbFlag).toEqual({ Military: 1, Pia: 4, Ladd: 8 });
+    expect(DbFlag).toEqual({ Military: 1, Interesting: 2, Pia: 4, Ladd: 8 });
+  });
+});
+
+describe("isInteresting", () => {
+  it("is true when bit 2 is set", () => {
+    expect(DbFlag.Interesting).toBe(2);
+    expect(isInteresting({ dbFlags: 2 })).toBe(true);
+    expect(isInteresting({ dbFlags: 3 })).toBe(true);
+  });
+  it("is false without bit 2", () => {
+    expect(isInteresting({ dbFlags: 1 })).toBe(false);
+    expect(isInteresting({ dbFlags: 12 })).toBe(false);
+    expect(isInteresting({})).toBe(false);
   });
 });
 

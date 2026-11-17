@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "adsb.lol API",
-    "description": "\nThe adsb.lol API is a free and open source\nAPI for the [adsb.lol](https://adsb.lol) project.\n\n## Usage\nYou can use the API by sending a GET request\nto the endpoint you want to use.\nThe API will return a JSON response.\n\n## Feeders\n\nBy sending data to adsb.lol, you get access to the\n[direct readsb re-api](https://www.adsb.lol/docs/feeders-only/re-api/)\nand\n[our raw aggregated data](https://www.adsb.lol/docs/feeders-only/beast-mlat-out/). :)\n\n## Terms of Service\nYou can use the API for free.\n\nIn the future, you will require an API key\nwhich you can get by feeding to adsb.lol.\n\nIf you want to use the API for production purposes,\nplease contact me so I do not break your application by accident.\n\n## License\n\nThe license for the API as well as all data ADSB.lol\nmakes public is [ODbL](https://opendatacommons.org/licenses/odbl/summary/).\n\nThis is the same license\n[OpenStreetMap](https://www.openstreetmap.org/copyright) uses.\n",
+    "description": "## Usage\nSend a GET request to the endpoint you want; the API answers with JSON.\nSend your key as `x-api-key`.\n\n## Limits\n\nMetered paths are counted against a quota; the free paths are not. Each\noperation carries `x-quota` (`free` or `metered`) so a client can see which is\nwhich without guessing from the path. Free: the `/0/` namespace (the map's own\nhelpers) and `/api/0/{my,routeset}`. Metered: `/v2/` and `/1/trace/`.\n\nNo key: **500 requests/day per IP**. A free key raises it:\n\n- anonymous (30 days, no account): 500/day\n- adhoc (free, request form): 1,000/day\n- feeder (free, by feeding the network): 7,200/day, 20 GB/month, and the raw\n  [re-api](https://www.adsb.lol/docs/feeders-only/re-api/)\n- sponsor plans: up to 360,000/day — full table at https://www.adsb.lol/sponsor\n\nOver quota returns `429` with a `Retry-After` header. Unkeyed traffic is\nlimited per IP; the daily window is a fixed 24h bucket, not midnight UTC.\nKeyed traffic is limited per key on the tier's own windows.\n\n## Feeders\nBy sending data to adsb.lol, you also get the\n[direct readsb re-api](https://www.adsb.lol/docs/feeders-only/re-api/).\n\n## License\n\nThe license for the API as well as all data ADSB.lol\nmakes public is [ODbL](https://opendatacommons.org/licenses/odbl/summary/).\n\nThis is the same license\n[OpenStreetMap](https://www.openstreetmap.org/copyright) uses.\n",
     "license": {
       "name": "Open Data Commons Open Database License (ODbL) v1.0",
       "url": "https://opendatacommons.org/licenses/odbl/1-0/"
@@ -15,6 +15,7 @@
         "tags": [
           "v2"
         ],
+        "x-quota": "metered",
         "summary": "Aircrafts with PIA addresses (Privacy ICAO Address)",
         "description": "Returns all aircraft with [PIA](https://nbaa.org/aircraft-operations/security/privacy/privacy-icao-address-pia/) addresses.",
         "operationId": "v2_pia_v2_pia_get",
@@ -28,6 +29,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/QuotaExceeded"
           }
         }
       }
@@ -37,6 +41,7 @@
         "tags": [
           "v2"
         ],
+        "x-quota": "metered",
         "summary": "Military registered aircrafts",
         "description": "Returns all military registered aircraft.",
         "operationId": "v2_mil_v2_mil_get",
@@ -50,6 +55,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/QuotaExceeded"
           }
         }
       }
@@ -59,6 +67,7 @@
         "tags": [
           "v2"
         ],
+        "x-quota": "metered",
         "summary": "Aircrafts on LADD (Limiting Aircraft Data Displayed)",
         "description": "Returns all aircrafts on [LADD](https://www.faa.gov/pilots/ladd) filter.",
         "operationId": "v2_ladd_v2_ladd_get",
@@ -72,6 +81,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/QuotaExceeded"
           }
         }
       }
@@ -81,6 +93,7 @@
         "tags": [
           "v2"
         ],
+        "x-quota": "metered",
         "summary": "Aircrafts with specific squawk (1200, 7700, etc.)",
         "description": "Returns aircraft filtered by \"squawk\" [transponder code](https://en.wikipedia.org/wiki/List_of_transponder_codes).",
         "operationId": "v2_squawk_filter_v2_sqk__squawk__get",
@@ -116,6 +129,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/QuotaExceeded"
           }
         }
       }
@@ -125,6 +141,7 @@
         "tags": [
           "v2"
         ],
+        "x-quota": "metered",
         "summary": "Aircrafts with specific squawk (1200, 7700, etc.)",
         "description": "Returns aircraft filtered by \"squawk\" [transponder code](https://en.wikipedia.org/wiki/List_of_transponder_codes).",
         "operationId": "v2_squawk_filter_v2_squawk__squawk__get",
@@ -160,6 +177,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/QuotaExceeded"
           }
         }
       }
@@ -169,6 +189,7 @@
         "tags": [
           "v2"
         ],
+        "x-quota": "metered",
         "summary": "Aircrafts of specific type (A320, B738)",
         "description": "Returns aircraft filtered by [aircraft type designator code](https://en.wikipedia.org/wiki/List_of_aircraft_type_designators).",
         "operationId": "v2_type_filter_v2_type__aircraft_type__get",
@@ -204,6 +225,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/QuotaExceeded"
           }
         }
       }
@@ -213,6 +237,7 @@
         "tags": [
           "v2"
         ],
+        "x-quota": "metered",
         "summary": "Aircrafts with specific registration (G-KELS)",
         "description": "Returns aircraft filtered by [aircarft registration code](https://en.wikipedia.org/wiki/Aircraft_registration).",
         "operationId": "v2_reg_filter_v2_reg__registration__get",
@@ -248,6 +273,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/QuotaExceeded"
           }
         }
       }
@@ -257,6 +285,7 @@
         "tags": [
           "v2"
         ],
+        "x-quota": "metered",
         "summary": "Aircrafts with specific registration (G-KELS)",
         "description": "Returns aircraft filtered by [aircarft registration code](https://en.wikipedia.org/wiki/Aircraft_registration).",
         "operationId": "v2_reg_filter_v2_registration__registration__get",
@@ -292,6 +321,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/QuotaExceeded"
           }
         }
       }
@@ -301,6 +333,7 @@
         "tags": [
           "v2"
         ],
+        "x-quota": "metered",
         "summary": "Aircrafts with specific transponder hex code (4CA87C)",
         "description": "Returns aircraft filtered by [transponder hex code](https://en.wikipedia.org/wiki/Aviation_transponder_interrogation_modes#ICAO_24-bit_address).",
         "operationId": "v2_hex_filter_v2_icao__icao_hex__get",
@@ -336,6 +369,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/QuotaExceeded"
           }
         }
       }
@@ -345,6 +381,7 @@
         "tags": [
           "v2"
         ],
+        "x-quota": "metered",
         "summary": "Aircrafts with specific transponder hex code (4CA87C)",
         "description": "Returns aircraft filtered by [transponder hex code](https://en.wikipedia.org/wiki/Aviation_transponder_interrogation_modes#ICAO_24-bit_address).",
         "operationId": "v2_hex_filter_v2_hex__icao_hex__get",
@@ -380,6 +417,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/QuotaExceeded"
           }
         }
       }
@@ -389,6 +429,7 @@
         "tags": [
           "v2"
         ],
+        "x-quota": "metered",
         "summary": "Aircrafts with specific callsign (JBU1942)",
         "description": "Returns aircraft filtered by [callsign](https://en.wikipedia.org/wiki/Aviation_call_signs).",
         "operationId": "v2_callsign_filter_v2_callsign__callsign__get",
@@ -424,6 +465,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/QuotaExceeded"
           }
         }
       }
@@ -433,6 +477,7 @@
         "tags": [
           "v2"
         ],
+        "x-quota": "metered",
         "summary": "Aircrafts surrounding a point (lat, lon) up to 250nm",
         "description": "Returns aircraft located in a circle described by the latitude and longtidude of its center and its radius.",
         "operationId": "v2_point_v2_lat__lat__lon__lon__dist__radius__get",
@@ -494,6 +539,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/QuotaExceeded"
           }
         }
       }
@@ -503,6 +551,7 @@
         "tags": [
           "v2"
         ],
+        "x-quota": "metered",
         "summary": "Aircrafts surrounding a point (lat, lon) up to 250nm",
         "description": "Returns aircraft located in a circle described by the latitude and longtidude of its center and its radius.",
         "operationId": "v2_point_v2_point__lat___lon___radius__get",
@@ -564,6 +613,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/QuotaExceeded"
           }
         }
       }
@@ -573,6 +625,7 @@
         "tags": [
           "v2"
         ],
+        "x-quota": "metered",
         "summary": "Single aircraft closest to a point (lat, lon)",
         "description": "Returns the closest aircraft to a point described by the latitude and longtidude within a radius up to 250nm.",
         "operationId": "v2_closest_v2_closest__lat___lon___radius__get",
@@ -634,6 +687,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/QuotaExceeded"
           }
         }
       }
@@ -644,6 +700,7 @@
           "v0",
           "v0"
         ],
+        "x-quota": "metered",
         "summary": "Airports by ICAO",
         "description": "Data by https://github.com/vradarserver/standing-data/",
         "operationId": "api_airport_api_0_airport__icao__get",
@@ -678,6 +735,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/QuotaExceeded"
           }
         }
       }
@@ -688,6 +748,7 @@
           "v0",
           "v0"
         ],
+        "x-quota": "free",
         "summary": "Api Routeset",
         "operationId": "api_routeset_api_0_routeset_post",
         "requestBody": {
@@ -729,6 +790,7 @@
         "tags": [
           "v0"
         ],
+        "x-quota": "free",
         "summary": "Information about your receiver and global stats",
         "operationId": "api_me_0_me_get",
         "responses": {
@@ -750,6 +812,7 @@
         "tags": [
           "v0"
         ],
+        "x-quota": "free",
         "summary": "My Map redirect based on IP",
         "operationId": "api_my_0_my_get",
         "responses": {
@@ -763,13 +826,119 @@
           }
         }
       }
+    },
+    "/1/trace/full/{icao_hex}": {
+      "get": {
+        "tags": [
+          "v0"
+        ],
+        "x-quota": "metered",
+        "summary": "Full trace for one aircraft",
+        "description": "The complete stored trace for one aircraft, exactly as\n[readsb](https://github.com/wiedehopf/readsb/blob/dev/README-json.md#trace-jsons)\nwrites it. Every point the aircraft reported for the day is returned; use\nthis for replay and analysis rather than for live positions. `icao_hex` is\nthe 24-bit ICAO address in 6 hex digits. Responds `404` when no trace was\nrecorded for that address.",
+        "operationId": "api_trace_full_0_trace_full__icao_hex__get",
+        "parameters": [
+          {
+            "name": "icao_hex",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{6}$",
+              "title": "Icao Hex"
+            },
+            "example": "4ca87c"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The stored trace, gzip-compressed JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TraceResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No trace recorded for that address"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/QuotaExceeded"
+          }
+        }
+      }
+    },
+    "/1/trace/recent/{icao_hex}": {
+      "get": {
+        "tags": [
+          "v0"
+        ],
+        "x-quota": "metered",
+        "summary": "Recent trace for one aircraft",
+        "description": "The tail of one aircraft's trace: the most recent points only, in\nthe same [readsb trace format](https://github.com/wiedehopf/readsb/blob/dev/README-json.md#trace-jsons)\nas `/1/trace/full/{icao_hex}`. Cheaper than the full trace when you only\nneed the current flight. `icao_hex` is the 24-bit ICAO address in 6 hex\ndigits. Responds `404` when no trace was recorded for that address.",
+        "operationId": "api_trace_recent_0_trace_recent__icao_hex__get",
+        "parameters": [
+          {
+            "name": "icao_hex",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{6}$",
+              "title": "Icao Hex"
+            },
+            "example": "4ca87c"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The recent trace, gzip-compressed JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TraceResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No trace recorded for that address"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/QuotaExceeded"
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
       "HTTPValidationError": {
+        "description": "A request was rejected before it reached the handler: a path or query parameter was missing or malformed (HTTP 422).",
         "properties": {
           "detail": {
+            "description": "One entry per rejected field.",
             "items": {
               "$ref": "#/components/schemas/ValidationError"
             },
@@ -781,16 +950,20 @@
         "title": "HTTPValidationError"
       },
       "PlaneInstance": {
+        "description": "One aircraft to resolve a route for. `callsign` is what the route lookup uses; `lat`/`lng` disambiguate when a callsign is reused across flights.",
         "properties": {
           "callsign": {
+            "description": "Flight callsign to resolve, e.g. `JBU1942`.",
             "type": "string",
             "title": "Callsign"
           },
           "lat": {
+            "description": "Current latitude in decimal degrees.",
             "type": "number",
             "title": "Lat"
           },
           "lng": {
+            "description": "Current longitude in decimal degrees.",
             "type": "number",
             "title": "Lng"
           }
@@ -804,8 +977,10 @@
         "title": "PlaneInstance"
       },
       "PlaneList": {
+        "description": "Request body for `/api/0/routeset`: the aircraft to look up routes for.",
         "properties": {
           "planes": {
+            "description": "Aircraft to resolve. An empty or absent list resolves nothing.",
             "anyOf": [
               {
                 "items": {
@@ -824,8 +999,10 @@
         "title": "PlaneList"
       },
       "V2Response_AcItem": {
+        "description": "One aircraft. Field names follow [readsb's aircraft.json](https://github.com/wiedehopf/readsb/blob/dev/README-json.md#aircraftjson-and---json-port), which is also the format tar1090 consumes. A field is omitted or `null` when the aircraft does not report it, so clients must not assume presence beyond the required keys. Point/radius queries add `dst` and `dir`; any field may be `null` for an aircraft that does not report it.",
         "properties": {
           "alert": {
+            "description": "Flight status alert bit.",
             "anyOf": [
               {
                 "type": "integer"
@@ -837,6 +1014,7 @@
             "title": "Alert"
           },
           "alt_baro": {
+            "description": "Barometric altitude in feet, or the string `\"ground\"` when on the surface.",
             "anyOf": [
               {
                 "type": "integer"
@@ -851,6 +1029,7 @@
             "title": "Alt Baro"
           },
           "alt_geom": {
+            "description": "Geometric (GNSS/INS) altitude in feet.",
             "anyOf": [
               {
                 "type": "integer"
@@ -862,6 +1041,7 @@
             "title": "Alt Geom"
           },
           "baro_rate": {
+            "description": "Rate of change of barometric altitude, feet per minute.",
             "anyOf": [
               {
                 "type": "integer"
@@ -873,6 +1053,7 @@
             "title": "Baro Rate"
           },
           "category": {
+            "description": "Emitter category, A0-D7.",
             "anyOf": [
               {
                 "type": "string"
@@ -884,6 +1065,7 @@
             "title": "Category"
           },
           "emergency": {
+            "description": "ADS-B emergency status, e.g. `none`, `general`, `lifeguard`, `downed`.",
             "anyOf": [
               {
                 "type": "string"
@@ -895,6 +1077,7 @@
             "title": "Emergency"
           },
           "flight": {
+            "description": "Callsign or registration as 8 characters, right-padded with spaces.",
             "anyOf": [
               {
                 "type": "string"
@@ -906,6 +1089,7 @@
             "title": "Flight"
           },
           "gs": {
+            "description": "Ground speed in knots.",
             "anyOf": [
               {
                 "type": "number"
@@ -917,6 +1101,7 @@
             "title": "Gs"
           },
           "gva": {
+            "description": "Geometric Vertical Accuracy.",
             "anyOf": [
               {
                 "type": "integer"
@@ -928,10 +1113,12 @@
             "title": "Gva"
           },
           "hex": {
+            "description": "24-bit ICAO address, 6 hex digits. A leading `~` marks a non-ICAO address (e.g. TIS-B).",
             "type": "string",
             "title": "Hex"
           },
           "lat": {
+            "description": "Latitude in decimal degrees. Absent until a position is known; see `lastPosition` for an older fix.",
             "anyOf": [
               {
                 "type": "number"
@@ -943,6 +1130,7 @@
             "title": "Lat"
           },
           "lon": {
+            "description": "Longitude in decimal degrees. Absent until a position is known.",
             "anyOf": [
               {
                 "type": "number"
@@ -954,10 +1142,12 @@
             "title": "Lon"
           },
           "messages": {
+            "description": "Mode S messages received from this aircraft.",
             "type": "integer",
             "title": "Messages"
           },
           "mlat": {
+            "description": "Fields derived from MLAT data, when the position was MLAT.",
             "items": {
               "type": "string"
             },
@@ -965,6 +1155,7 @@
             "title": "Mlat"
           },
           "nac_p": {
+            "description": "Navigation Accuracy for Position.",
             "anyOf": [
               {
                 "type": "integer"
@@ -976,6 +1167,7 @@
             "title": "Nac P"
           },
           "nac_v": {
+            "description": "Navigation Accuracy for Velocity.",
             "anyOf": [
               {
                 "type": "integer"
@@ -987,6 +1179,7 @@
             "title": "Nac V"
           },
           "nav_altitude_mcp": {
+            "description": "Selected altitude from the Mode Control Panel, feet.",
             "anyOf": [
               {
                 "type": "integer"
@@ -998,6 +1191,7 @@
             "title": "Nav Altitude Mcp"
           },
           "nav_heading": {
+            "description": "Selected heading. Not defined as true or magnetic by DO-260B; usually magnetic.",
             "anyOf": [
               {
                 "type": "number"
@@ -1009,6 +1203,7 @@
             "title": "Nav Heading"
           },
           "nav_qnh": {
+            "description": "Altimeter setting (QNH), hPa.",
             "anyOf": [
               {
                 "type": "number"
@@ -1020,6 +1215,7 @@
             "title": "Nav Qnh"
           },
           "nic": {
+            "description": "Navigation Integrity Category.",
             "anyOf": [
               {
                 "type": "integer"
@@ -1031,6 +1227,7 @@
             "title": "Nic"
           },
           "nic_baro": {
+            "description": "Navigation Integrity Category for barometric altitude.",
             "anyOf": [
               {
                 "type": "integer"
@@ -1042,6 +1239,7 @@
             "title": "Nic Baro"
           },
           "r": {
+            "description": "Registration from the aircraft database, when known.",
             "anyOf": [
               {
                 "type": "string"
@@ -1053,6 +1251,7 @@
             "title": "R"
           },
           "rc": {
+            "description": "Radius of containment, metres.",
             "anyOf": [
               {
                 "type": "integer"
@@ -1064,10 +1263,12 @@
             "title": "Rc"
           },
           "rssi": {
+            "description": "Recent average signal power in dBFS; always negative.",
             "type": "number",
             "title": "Rssi"
           },
           "sda": {
+            "description": "System Design Assurance.",
             "anyOf": [
               {
                 "type": "integer"
@@ -1079,10 +1280,12 @@
             "title": "Sda"
           },
           "seen": {
+            "description": "Seconds since the last message from this aircraft.",
             "type": "number",
             "title": "Seen"
           },
           "seen_pos": {
+            "description": "Seconds since the last position update.",
             "anyOf": [
               {
                 "type": "number"
@@ -1094,6 +1297,7 @@
             "title": "Seen Pos"
           },
           "sil": {
+            "description": "Source Integrity Level.",
             "anyOf": [
               {
                 "type": "integer"
@@ -1105,6 +1309,7 @@
             "title": "Sil"
           },
           "sil_type": {
+            "description": "How `sil` is expressed: `unknown`, `perhour` or `persample`.",
             "anyOf": [
               {
                 "type": "string"
@@ -1116,6 +1321,7 @@
             "title": "Sil Type"
           },
           "spi": {
+            "description": "Flight status special-position-identification bit.",
             "anyOf": [
               {
                 "type": "integer"
@@ -1127,6 +1333,7 @@
             "title": "Spi"
           },
           "squawk": {
+            "description": "Mode A code, 4 octal digits.",
             "anyOf": [
               {
                 "type": "string"
@@ -1138,6 +1345,7 @@
             "title": "Squawk"
           },
           "t": {
+            "description": "ICAO type code from the aircraft database, when known.",
             "anyOf": [
               {
                 "type": "string"
@@ -1149,6 +1357,7 @@
             "title": "T"
           },
           "tisb": {
+            "description": "Fields derived from TIS-B data, when the position came over TIS-B.",
             "items": {
               "type": "string"
             },
@@ -1156,6 +1365,7 @@
             "title": "Tisb"
           },
           "track": {
+            "description": "True track over ground, degrees (0-359). True heading instead while on the ground.",
             "anyOf": [
               {
                 "type": "number"
@@ -1167,10 +1377,12 @@
             "title": "Track"
           },
           "type": {
+            "description": "Source of the position / best message type, e.g. `adsb_icao`, `mlat`, `tisb_icao`, `mode_s`.",
             "type": "string",
             "title": "Type"
           },
           "version": {
+            "description": "ADS-B version reported by the aircraft.",
             "anyOf": [
               {
                 "type": "integer"
@@ -1182,6 +1394,7 @@
             "title": "Version"
           },
           "geom_rate": {
+            "description": "Rate of change of geometric altitude, feet per minute.",
             "anyOf": [
               {
                 "type": "integer"
@@ -1193,6 +1406,7 @@
             "title": "Geom Rate"
           },
           "dbFlags": {
+            "description": "Database bitfield: `1` military, `2` interesting, `4` PIA, `8` LADD.",
             "anyOf": [
               {
                 "type": "integer"
@@ -1204,6 +1418,7 @@
             "title": "Dbflags"
           },
           "nav_modes": {
+            "description": "Engaged automation modes, e.g. `autopilot`, `vnav`, `althold`, `lnav`.",
             "anyOf": [
               {
                 "items": {
@@ -1218,6 +1433,7 @@
             "title": "Nav Modes"
           },
           "true_heading": {
+            "description": "Heading clockwise from true north.",
             "anyOf": [
               {
                 "type": "number"
@@ -1229,6 +1445,7 @@
             "title": "True Heading"
           },
           "ias": {
+            "description": "Indicated air speed in knots.",
             "anyOf": [
               {
                 "type": "integer"
@@ -1240,6 +1457,7 @@
             "title": "Ias"
           },
           "mach": {
+            "description": "Mach number.",
             "anyOf": [
               {
                 "type": "number"
@@ -1251,6 +1469,7 @@
             "title": "Mach"
           },
           "mag_heading": {
+            "description": "Heading clockwise from magnetic north.",
             "anyOf": [
               {
                 "type": "number"
@@ -1262,6 +1481,7 @@
             "title": "Mag Heading"
           },
           "oat": {
+            "description": "Outside air temperature, degrees C. Only calculated above mach 0.395.",
             "anyOf": [
               {
                 "type": "integer"
@@ -1273,6 +1493,7 @@
             "title": "Oat"
           },
           "roll": {
+            "description": "Roll angle in degrees; negative is left.",
             "anyOf": [
               {
                 "type": "number"
@@ -1284,6 +1505,7 @@
             "title": "Roll"
           },
           "tas": {
+            "description": "True air speed in knots.",
             "anyOf": [
               {
                 "type": "integer"
@@ -1295,6 +1517,7 @@
             "title": "Tas"
           },
           "tat": {
+            "description": "Total air temperature, degrees C.",
             "anyOf": [
               {
                 "type": "integer"
@@ -1306,6 +1529,7 @@
             "title": "Tat"
           },
           "track_rate": {
+            "description": "Rate of change of track, degrees per second.",
             "anyOf": [
               {
                 "type": "number"
@@ -1317,6 +1541,7 @@
             "title": "Track Rate"
           },
           "wd": {
+            "description": "Wind direction in degrees, derived from track and speed.",
             "anyOf": [
               {
                 "type": "integer"
@@ -1328,6 +1553,7 @@
             "title": "Wd"
           },
           "ws": {
+            "description": "Wind speed in knots, derived from track and speed.",
             "anyOf": [
               {
                 "type": "integer"
@@ -1339,6 +1565,7 @@
             "title": "Ws"
           },
           "gpsOkBefore": {
+            "description": "Unix time before which the aircraft's GPS was still good; present for 15 minutes after GPS is lost or degraded.",
             "anyOf": [
               {
                 "type": "number"
@@ -1350,6 +1577,7 @@
             "title": "Gpsokbefore"
           },
           "gpsOkLat": {
+            "description": "Latitude of the last known GPS-good position.",
             "anyOf": [
               {
                 "type": "number"
@@ -1361,6 +1589,7 @@
             "title": "Gpsoklat"
           },
           "gpsOkLon": {
+            "description": "Longitude of the last known GPS-good position.",
             "anyOf": [
               {
                 "type": "number"
@@ -1372,6 +1601,7 @@
             "title": "Gpsoklon"
           },
           "lastPosition": {
+            "description": "Last known position with its age, used when `lat`/`lon` are older than 60 seconds.",
             "anyOf": [
               {
                 "$ref": "#/components/schemas/V2Response_LastPosition"
@@ -1382,6 +1612,7 @@
             ]
           },
           "rr_lat": {
+            "description": "Rough latitude estimated from the receiver position, only when no ADS-B or MLAT position exists.",
             "anyOf": [
               {
                 "type": "number"
@@ -1393,6 +1624,7 @@
             "title": "Rr Lat"
           },
           "rr_lon": {
+            "description": "Rough longitude estimated from the receiver position.",
             "anyOf": [
               {
                 "type": "number"
@@ -1404,6 +1636,7 @@
             "title": "Rr Lon"
           },
           "calc_track": {
+            "description": "True track derived rather than transmitted.",
             "anyOf": [
               {
                 "type": "integer"
@@ -1415,6 +1648,7 @@
             "title": "Calc Track"
           },
           "nav_altitude_fms": {
+            "description": "Selected altitude from the Flight Management System, feet.",
             "anyOf": [
               {
                 "type": "integer"
@@ -1424,6 +1658,22 @@
               }
             ],
             "title": "Nav Altitude Fms"
+          },
+          "dst": {
+            "description": "Distance from the query point in nautical miles. Only present on `/v2/point`, `/v2/lat/{lat}/lon/{lon}/dist/{radius}` and `/v2/closest` responses.",
+            "type": [
+              "number",
+              "null"
+            ],
+            "title": "Dst"
+          },
+          "dir": {
+            "description": "True direction of the aircraft from the query point, degrees. Only present on the point/radius queries, alongside `dst`.",
+            "type": [
+              "number",
+              "null"
+            ],
+            "title": "Dir"
           }
         },
         "type": "object",
@@ -1439,24 +1689,30 @@
         "title": "V2Response_AcItem"
       },
       "V2Response_LastPosition": {
+        "description": "The last known position of an aircraft whose regular `lat`/`lon` are older than 60 seconds, with the age of that fix.",
         "properties": {
           "lat": {
+            "description": "Latitude in decimal degrees.",
             "type": "number",
             "title": "Lat"
           },
           "lon": {
+            "description": "Longitude in decimal degrees.",
             "type": "number",
             "title": "Lon"
           },
           "nic": {
+            "description": "Navigation Integrity Category of this fix.",
             "type": "integer",
             "title": "Nic"
           },
           "rc": {
+            "description": "Radius of containment, metres.",
             "type": "integer",
             "title": "Rc"
           },
           "seen_pos": {
+            "description": "Seconds since this position was received.",
             "type": "number",
             "title": "Seen Pos"
           }
@@ -1472,8 +1728,10 @@
         "title": "V2Response_LastPosition"
       },
       "V2Response_Model": {
+        "description": "Top-level envelope of every `/v2/*` response. `ac` holds the matching aircraft; `total` is its length, so a client can check for truncation without walking the array.",
         "properties": {
           "ac": {
+            "description": "One entry per matching aircraft.",
             "items": {
               "$ref": "#/components/schemas/V2Response_AcItem"
             },
@@ -1481,22 +1739,27 @@
             "title": "Ac"
           },
           "ctime": {
+            "description": "Server time the data was cached, in **Unix milliseconds**.",
             "type": "integer",
             "title": "Ctime"
           },
           "msg": {
+            "description": "Human-readable status; `No error` on success.",
             "type": "string",
             "title": "Msg"
           },
           "now": {
+            "description": "Time the data was generated, in **Unix milliseconds**.",
             "type": "integer",
             "title": "Now"
           },
           "ptime": {
+            "description": "Milliseconds spent building the response.",
             "type": "integer",
             "title": "Ptime"
           },
           "total": {
+            "description": "Number of aircraft in `ac`.",
             "type": "integer",
             "title": "Total"
           }
@@ -1513,8 +1776,10 @@
         "title": "V2Response_Model"
       },
       "ValidationError": {
+        "description": "One field-level reason the request was rejected.",
         "properties": {
           "loc": {
+            "description": "Path to the offending field; the first element names the source (`path`, `query`, `body`).",
             "items": {
               "anyOf": [
                 {
@@ -1529,17 +1794,21 @@
             "title": "Location"
           },
           "msg": {
+            "description": "What is wrong with it.",
             "type": "string",
             "title": "Message"
           },
           "type": {
+            "description": "Machine-readable error kind.",
             "type": "string",
             "title": "Error Type"
           },
           "input": {
+            "description": "The value that was received.",
             "title": "Input"
           },
           "ctx": {
+            "description": "Extra context, when the check provides any.",
             "type": "object",
             "title": "Context"
           }
@@ -1551,6 +1820,200 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "TraceResponse": {
+        "description": "One aircraft's stored trace, as [readsb](https://github.com/wiedehopf/readsb/blob/dev/README-json.md#trace-jsons) writes it.",
+        "properties": {
+          "icao": {
+            "type": "string",
+            "title": "Icao",
+            "description": "24-bit ICAO address of the aircraft, 6 lowercase hex digits.",
+            "example": "3c66b0"
+          },
+          "r": {
+            "type": "string",
+            "title": "Registration",
+            "description": "Registration from the aircraft database, when known."
+          },
+          "t": {
+            "type": "string",
+            "title": "Type",
+            "description": "ICAO type code from the aircraft database, when known.",
+            "example": "A320"
+          },
+          "dbFlags": {
+            "type": "integer",
+            "title": "Db Flags",
+            "description": "Database bitfield: `1` military, `2` interesting, `4` PIA, `8` LADD."
+          },
+          "desc": {
+            "type": "string",
+            "title": "Description",
+            "description": "Long type name from the aircraft database, when known."
+          },
+          "ownOp": {
+            "type": "string",
+            "title": "Registered owner or operator",
+            "description": "Registered owner or operator from the aircraft database, when known."
+          },
+          "year": {
+            "type": "string",
+            "title": "Year",
+            "description": "Year of manufacture from the aircraft database, when known."
+          },
+          "version": {
+            "type": "integer",
+            "title": "ADS-B version",
+            "description": "ADS-B version reported by the aircraft."
+          },
+          "timestamp": {
+            "type": "number",
+            "title": "Timestamp",
+            "description": "Unix time of the first point, in seconds. Offsets in `trace` are relative to this."
+          },
+          "trace": {
+            "items": {
+              "$ref": "#/components/schemas/TracePoint"
+            },
+            "type": "array",
+            "title": "Trace",
+            "description": "One entry per stored position; see access by index below."
+          }
+        },
+        "type": "object",
+        "required": [
+          "icao",
+          "timestamp",
+          "trace"
+        ],
+        "title": "TraceResponse"
+      },
+      "TracePoint": {
+        "description": "One trace position, stored as a positional array rather than an object.\nIndex: `0` seconds after `timestamp`, `1` latitude, `2` longitude,\n`3` altitude in ft (or `\"ground\"`), `4` ground speed in kt,\n`5` track in degrees (true heading when on the ground), `6` flags\nbitfield (`1` position stale, `2` new leg, `4` geometric vertical rate,\n`8` geometric altitude), `7` vertical rate in fpm, `8` extra aircraft\ndetails (or `null`), `9` position source, `10` geometric altitude,\n`11` geometric vertical rate, `12` indicated airspeed, `13` roll angle.\nFields from index `9` exist only in files generated in 2022 and later, so\nthe array length varies. Any of `3`-`13` can be `null`.",
+        "type": "array",
+        "title": "TracePoint",
+        "prefixItems": [
+          {
+            "type": "number",
+            "title": "Seconds after timestamp"
+          },
+          {
+            "type": "number",
+            "title": "Latitude",
+            "description": "Decimal degrees, WGS84."
+          },
+          {
+            "type": "number",
+            "title": "Longitude",
+            "description": "Decimal degrees, WGS84."
+          },
+          {
+            "title": "Altitude",
+            "description": "Barometric altitude in ft, or `\"ground\"`.",
+            "type": [
+              "number",
+              "string",
+              "null"
+            ]
+          },
+          {
+            "title": "Ground speed",
+            "description": "Ground speed in kt.",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          {
+            "title": "Track",
+            "description": "True track over ground in degrees. True heading instead when the altitude is `\"ground\"`.",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          {
+            "type": "integer",
+            "title": "Flags",
+            "description": "Bitfield: `1` position stale, `2` new leg, `4` geometric vertical rate, `8` geometric altitude."
+          },
+          {
+            "title": "Vertical rate",
+            "description": "Vertical rate in fpm.",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          {
+            "title": "Extra details",
+            "description": "Aircraft object with extra fields, in the `aircraft.json` shape but without the values already given by position. `null` when absent.",
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          {
+            "title": "Position source",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          {
+            "title": "Geometric altitude",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          {
+            "title": "Geometric vertical rate",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          {
+            "title": "Indicated airspeed",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          {
+            "title": "Roll angle",
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        ],
+        "items": false,
+        "minItems": 8,
+        "maxItems": 14
+      }
+    },
+    "responses": {
+      "QuotaExceeded": {
+        "description": "The caller is over its request quota for this path. The window that tripped is named in the body (per-second, per-minute, per-hour or per-day for unkeyed traffic; the key's tier windows for keyed traffic). Retry after the number of seconds in `Retry-After`.",
+        "headers": {
+          "Retry-After": {
+            "description": "Seconds until the current window resets.",
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "content": {
+          "text/plain": {
+            "schema": {
+              "type": "string",
+              "example": "rate limit exceeded"
+            }
+          }
+        }
       }
     }
   }

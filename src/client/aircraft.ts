@@ -4,6 +4,8 @@ import type { Aircraft } from "./types.js";
 export const DbFlag = {
   /** Bit value 1: the aircraft is flagged as military. */
   Military: 1,
+  /** Bit value 2: the aircraft is flagged as interesting. */
+  Interesting: 2,
   /** Bit value 4: Privacy ICAO Address (PIA). */
   Pia: 4,
   /** Bit value 8: Limiting Aircraft Data Displayed (LADD). */
@@ -17,6 +19,18 @@ function hasFlag(a: Pick<Aircraft, "dbFlags">, flag: number): boolean {
 /** True if the aircraft is flagged as military. */
 export function isMilitary(a: Pick<Aircraft, "dbFlags">): boolean {
   return hasFlag(a, DbFlag.Military);
+}
+
+/**
+ * True if the aircraft is flagged as interesting (database bit 2).
+ *
+ * @example
+ * ```ts
+ * const interesting = aircraft.filter(isInteresting);
+ * ```
+ */
+export function isInteresting(a: Pick<Aircraft, "dbFlags">): boolean {
+  return hasFlag(a, DbFlag.Interesting);
 }
 
 /** True if the aircraft uses a Privacy ICAO Address (PIA). */
