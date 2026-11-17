@@ -352,7 +352,15 @@ export function createTransport(
           durationMs: now() - started,
         }),
       );
-      text = await response.text();
+      try {
+        text = await response.text();
+      } catch (bodyError) {
+        // An unreadable error body (for example a truncated gzip stream on a 404) must not hide
+        // the status. Aborts, timeouts and failed 2xx reads keep their normal handling.
+        const isError = status < 200 || status >= 300;
+        if (!isError || spec.signal?.aborted || timeoutSignal.aborted) throw bodyError;
+        text = "";
+      }
     } catch (cause) {
       if (spec.signal?.aborted) throw spec.signal.reason;
       if (timeoutSignal.aborted) {

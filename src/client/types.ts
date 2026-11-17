@@ -108,8 +108,8 @@ export interface Aircraft {
   /** ICAO aircraft type code, for example `A320`. From the database, not broadcast. */
   t?: string;
   /**
-   * Database flags, a bitfield. See `DbFlag`: 1 = military, 4 = PIA, 8 = LADD.
-   * Use `isMilitary()`, `isPia()`, `isLadd()`.
+   * Database flags, a bitfield. See `DbFlag`: `1` military, `2` interesting, `4` PIA, `8` LADD.
+   * Use `isMilitary()`, `isInteresting()`, `isPia()`, `isLadd()`.
    */
   dbFlags?: number;
   /** Barometric altitude in feet (relative to 1013.25 hPa), or `"ground"` when on the ground. */

@@ -9,6 +9,7 @@ import {
   normalizeAirportIcao,
   normalizeCallsign,
   normalizeHex,
+  normalizeIcaoHex,
   normalizeRegistration,
   pathSegment,
 } from "../../src/client/validate.js";
@@ -189,4 +190,26 @@ describe("pathSegment", () => {
     expect(pathSegment("a..b")).toBe("a..b");
     expect(pathSegment("...")).toBe("...");
   });
+});
+
+describe("normalizeIcaoHex", () => {
+  it("trims and lowercases", () => {
+    expect(normalizeIcaoHex(" 4CA87C ")).toBe("4ca87c");
+  });
+
+  it.each(["~2c1a3b", "xyz", "", "12345", "1234567", 123 as unknown as string])(
+    "rejects %j with loc path/hex",
+    (v) => {
+      try {
+        normalizeIcaoHex(v);
+        expect.unreachable();
+      } catch (e) {
+        expect(e).toBeInstanceOf(ValidationError);
+        expect((e as ValidationError).issues[0]).toMatchObject({
+          loc: ["path", "hex"],
+          type: "client_validation",
+        });
+      }
+    },
+  );
 });

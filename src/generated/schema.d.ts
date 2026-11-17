@@ -355,190 +355,604 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/1/trace/full/{icao_hex}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Full trace for one aircraft
+         * @description The complete stored trace for one aircraft, exactly as
+         *     [readsb](https://github.com/wiedehopf/readsb/blob/dev/README-json.md#trace-jsons)
+         *     writes it. Every point the aircraft reported for the day is returned; use
+         *     this for replay and analysis rather than for live positions. `icao_hex` is
+         *     the 24-bit ICAO address in 6 hex digits. Responds `404` when no trace was
+         *     recorded for that address.
+         */
+        get: operations["api_trace_full_0_trace_full__icao_hex__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/1/trace/recent/{icao_hex}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Recent trace for one aircraft
+         * @description The tail of one aircraft's trace: the most recent points only, in
+         *     the same [readsb trace format](https://github.com/wiedehopf/readsb/blob/dev/README-json.md#trace-jsons)
+         *     as `/1/trace/full/{icao_hex}`. Cheaper than the full trace when you only
+         *     need the current flight. `icao_hex` is the 24-bit ICAO address in 6 hex
+         *     digits. Responds `404` when no trace was recorded for that address.
+         */
+        get: operations["api_trace_recent_0_trace_recent__icao_hex__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** HTTPValidationError */
+        /**
+         * HTTPValidationError
+         * @description A request was rejected before it reached the handler: a path or query parameter was missing or malformed (HTTP 422).
+         */
         HTTPValidationError: {
-            /** Detail */
+            /**
+             * Detail
+             * @description One entry per rejected field.
+             */
             detail?: components["schemas"]["ValidationError"][];
         };
-        /** PlaneInstance */
+        /**
+         * PlaneInstance
+         * @description One aircraft to resolve a route for. `callsign` is what the route lookup uses; `lat`/`lng` disambiguate when a callsign is reused across flights.
+         */
         PlaneInstance: {
-            /** Callsign */
+            /**
+             * Callsign
+             * @description Flight callsign to resolve, e.g. `JBU1942`.
+             */
             callsign: string;
-            /** Lat */
+            /**
+             * Lat
+             * @description Current latitude in decimal degrees.
+             */
             lat: number;
-            /** Lng */
+            /**
+             * Lng
+             * @description Current longitude in decimal degrees.
+             */
             lng: number;
         };
-        /** PlaneList */
+        /**
+         * PlaneList
+         * @description Request body for `/api/0/routeset`: the aircraft to look up routes for.
+         */
         PlaneList: {
-            /** Planes */
+            /**
+             * Planes
+             * @description Aircraft to resolve. An empty or absent list resolves nothing.
+             */
             planes?: components["schemas"]["PlaneInstance"][] | null;
         };
-        /** V2Response_AcItem */
+        /**
+         * V2Response_AcItem
+         * @description One aircraft. Field names follow [readsb's aircraft.json](https://github.com/wiedehopf/readsb/blob/dev/README-json.md#aircraftjson-and---json-port), which is also the format tar1090 consumes. A field is omitted or `null` when the aircraft does not report it, so clients must not assume presence beyond the required keys. Point/radius queries add `dst` and `dir`; any field may be `null` for an aircraft that does not report it.
+         */
         V2Response_AcItem: {
-            /** Alert */
+            /**
+             * Alert
+             * @description Flight status alert bit.
+             */
             alert?: number | null;
-            /** Alt Baro */
+            /**
+             * Alt Baro
+             * @description Barometric altitude in feet, or the string `"ground"` when on the surface.
+             */
             alt_baro?: number | string | null;
-            /** Alt Geom */
+            /**
+             * Alt Geom
+             * @description Geometric (GNSS/INS) altitude in feet.
+             */
             alt_geom?: number | null;
-            /** Baro Rate */
+            /**
+             * Baro Rate
+             * @description Rate of change of barometric altitude, feet per minute.
+             */
             baro_rate?: number | null;
-            /** Category */
+            /**
+             * Category
+             * @description Emitter category, A0-D7.
+             */
             category?: string | null;
-            /** Emergency */
+            /**
+             * Emergency
+             * @description ADS-B emergency status, e.g. `none`, `general`, `lifeguard`, `downed`.
+             */
             emergency?: string | null;
-            /** Flight */
+            /**
+             * Flight
+             * @description Callsign or registration as 8 characters, right-padded with spaces.
+             */
             flight?: string | null;
-            /** Gs */
+            /**
+             * Gs
+             * @description Ground speed in knots.
+             */
             gs?: number | null;
-            /** Gva */
+            /**
+             * Gva
+             * @description Geometric Vertical Accuracy.
+             */
             gva?: number | null;
-            /** Hex */
+            /**
+             * Hex
+             * @description 24-bit ICAO address, 6 hex digits. A leading `~` marks a non-ICAO address (e.g. TIS-B).
+             */
             hex: string;
-            /** Lat */
+            /**
+             * Lat
+             * @description Latitude in decimal degrees. Absent until a position is known; see `lastPosition` for an older fix.
+             */
             lat?: number | null;
-            /** Lon */
+            /**
+             * Lon
+             * @description Longitude in decimal degrees. Absent until a position is known.
+             */
             lon?: number | null;
-            /** Messages */
+            /**
+             * Messages
+             * @description Mode S messages received from this aircraft.
+             */
             messages: number;
-            /** Mlat */
+            /**
+             * Mlat
+             * @description Fields derived from MLAT data, when the position was MLAT.
+             */
             mlat: string[];
-            /** Nac P */
+            /**
+             * Nac P
+             * @description Navigation Accuracy for Position.
+             */
             nac_p?: number | null;
-            /** Nac V */
+            /**
+             * Nac V
+             * @description Navigation Accuracy for Velocity.
+             */
             nac_v?: number | null;
-            /** Nav Altitude Mcp */
+            /**
+             * Nav Altitude Mcp
+             * @description Selected altitude from the Mode Control Panel, feet.
+             */
             nav_altitude_mcp?: number | null;
-            /** Nav Heading */
+            /**
+             * Nav Heading
+             * @description Selected heading. Not defined as true or magnetic by DO-260B; usually magnetic.
+             */
             nav_heading?: number | null;
-            /** Nav Qnh */
+            /**
+             * Nav Qnh
+             * @description Altimeter setting (QNH), hPa.
+             */
             nav_qnh?: number | null;
-            /** Nic */
+            /**
+             * Nic
+             * @description Navigation Integrity Category.
+             */
             nic?: number | null;
-            /** Nic Baro */
+            /**
+             * Nic Baro
+             * @description Navigation Integrity Category for barometric altitude.
+             */
             nic_baro?: number | null;
-            /** R */
+            /**
+             * R
+             * @description Registration from the aircraft database, when known.
+             */
             r?: string | null;
-            /** Rc */
+            /**
+             * Rc
+             * @description Radius of containment, metres.
+             */
             rc?: number | null;
-            /** Rssi */
+            /**
+             * Rssi
+             * @description Recent average signal power in dBFS; always negative.
+             */
             rssi: number;
-            /** Sda */
+            /**
+             * Sda
+             * @description System Design Assurance.
+             */
             sda?: number | null;
-            /** Seen */
+            /**
+             * Seen
+             * @description Seconds since the last message from this aircraft.
+             */
             seen: number;
-            /** Seen Pos */
+            /**
+             * Seen Pos
+             * @description Seconds since the last position update.
+             */
             seen_pos?: number | null;
-            /** Sil */
+            /**
+             * Sil
+             * @description Source Integrity Level.
+             */
             sil?: number | null;
-            /** Sil Type */
+            /**
+             * Sil Type
+             * @description How `sil` is expressed: `unknown`, `perhour` or `persample`.
+             */
             sil_type?: string | null;
-            /** Spi */
+            /**
+             * Spi
+             * @description Flight status special-position-identification bit.
+             */
             spi?: number | null;
-            /** Squawk */
+            /**
+             * Squawk
+             * @description Mode A code, 4 octal digits.
+             */
             squawk?: string | null;
-            /** T */
+            /**
+             * T
+             * @description ICAO type code from the aircraft database, when known.
+             */
             t?: string | null;
-            /** Tisb */
+            /**
+             * Tisb
+             * @description Fields derived from TIS-B data, when the position came over TIS-B.
+             */
             tisb: string[];
-            /** Track */
+            /**
+             * Track
+             * @description True track over ground, degrees (0-359). True heading instead while on the ground.
+             */
             track?: number | null;
-            /** Type */
+            /**
+             * Type
+             * @description Source of the position / best message type, e.g. `adsb_icao`, `mlat`, `tisb_icao`, `mode_s`.
+             */
             type: string;
-            /** Version */
+            /**
+             * Version
+             * @description ADS-B version reported by the aircraft.
+             */
             version?: number | null;
-            /** Geom Rate */
+            /**
+             * Geom Rate
+             * @description Rate of change of geometric altitude, feet per minute.
+             */
             geom_rate?: number | null;
-            /** Dbflags */
+            /**
+             * Dbflags
+             * @description Database bitfield: `1` military, `2` interesting, `4` PIA, `8` LADD.
+             */
             dbFlags?: number | null;
-            /** Nav Modes */
+            /**
+             * Nav Modes
+             * @description Engaged automation modes, e.g. `autopilot`, `vnav`, `althold`, `lnav`.
+             */
             nav_modes?: string[] | null;
-            /** True Heading */
+            /**
+             * True Heading
+             * @description Heading clockwise from true north.
+             */
             true_heading?: number | null;
-            /** Ias */
+            /**
+             * Ias
+             * @description Indicated air speed in knots.
+             */
             ias?: number | null;
-            /** Mach */
+            /**
+             * Mach
+             * @description Mach number.
+             */
             mach?: number | null;
-            /** Mag Heading */
+            /**
+             * Mag Heading
+             * @description Heading clockwise from magnetic north.
+             */
             mag_heading?: number | null;
-            /** Oat */
+            /**
+             * Oat
+             * @description Outside air temperature, degrees C. Only calculated above mach 0.395.
+             */
             oat?: number | null;
-            /** Roll */
+            /**
+             * Roll
+             * @description Roll angle in degrees; negative is left.
+             */
             roll?: number | null;
-            /** Tas */
+            /**
+             * Tas
+             * @description True air speed in knots.
+             */
             tas?: number | null;
-            /** Tat */
+            /**
+             * Tat
+             * @description Total air temperature, degrees C.
+             */
             tat?: number | null;
-            /** Track Rate */
+            /**
+             * Track Rate
+             * @description Rate of change of track, degrees per second.
+             */
             track_rate?: number | null;
-            /** Wd */
+            /**
+             * Wd
+             * @description Wind direction in degrees, derived from track and speed.
+             */
             wd?: number | null;
-            /** Ws */
+            /**
+             * Ws
+             * @description Wind speed in knots, derived from track and speed.
+             */
             ws?: number | null;
-            /** Gpsokbefore */
+            /**
+             * Gpsokbefore
+             * @description Unix time before which the aircraft's GPS was still good; present for 15 minutes after GPS is lost or degraded.
+             */
             gpsOkBefore?: number | null;
-            /** Gpsoklat */
+            /**
+             * Gpsoklat
+             * @description Latitude of the last known GPS-good position.
+             */
             gpsOkLat?: number | null;
-            /** Gpsoklon */
+            /**
+             * Gpsoklon
+             * @description Longitude of the last known GPS-good position.
+             */
             gpsOkLon?: number | null;
+            /** @description Last known position with its age, used when `lat`/`lon` are older than 60 seconds. */
             lastPosition?: components["schemas"]["V2Response_LastPosition"] | null;
-            /** Rr Lat */
+            /**
+             * Rr Lat
+             * @description Rough latitude estimated from the receiver position, only when no ADS-B or MLAT position exists.
+             */
             rr_lat?: number | null;
-            /** Rr Lon */
+            /**
+             * Rr Lon
+             * @description Rough longitude estimated from the receiver position.
+             */
             rr_lon?: number | null;
-            /** Calc Track */
+            /**
+             * Calc Track
+             * @description True track derived rather than transmitted.
+             */
             calc_track?: number | null;
-            /** Nav Altitude Fms */
+            /**
+             * Nav Altitude Fms
+             * @description Selected altitude from the Flight Management System, feet.
+             */
             nav_altitude_fms?: number | null;
+            /**
+             * Dst
+             * @description Distance from the query point in nautical miles. Only present on `/v2/point`, `/v2/lat/{lat}/lon/{lon}/dist/{radius}` and `/v2/closest` responses.
+             */
+            dst?: number | null;
+            /**
+             * Dir
+             * @description True direction of the aircraft from the query point, degrees. Only present on the point/radius queries, alongside `dst`.
+             */
+            dir?: number | null;
         };
-        /** V2Response_LastPosition */
+        /**
+         * V2Response_LastPosition
+         * @description The last known position of an aircraft whose regular `lat`/`lon` are older than 60 seconds, with the age of that fix.
+         */
         V2Response_LastPosition: {
-            /** Lat */
+            /**
+             * Lat
+             * @description Latitude in decimal degrees.
+             */
             lat: number;
-            /** Lon */
+            /**
+             * Lon
+             * @description Longitude in decimal degrees.
+             */
             lon: number;
-            /** Nic */
+            /**
+             * Nic
+             * @description Navigation Integrity Category of this fix.
+             */
             nic: number;
-            /** Rc */
+            /**
+             * Rc
+             * @description Radius of containment, metres.
+             */
             rc: number;
-            /** Seen Pos */
+            /**
+             * Seen Pos
+             * @description Seconds since this position was received.
+             */
             seen_pos: number;
         };
-        /** V2Response_Model */
+        /**
+         * V2Response_Model
+         * @description Top-level envelope of every `/v2/*` response. `ac` holds the matching aircraft; `total` is its length, so a client can check for truncation without walking the array.
+         */
         V2Response_Model: {
-            /** Ac */
+            /**
+             * Ac
+             * @description One entry per matching aircraft.
+             */
             ac: components["schemas"]["V2Response_AcItem"][];
-            /** Ctime */
+            /**
+             * Ctime
+             * @description Server time the data was cached, in **Unix milliseconds**.
+             */
             ctime: number;
-            /** Msg */
+            /**
+             * Msg
+             * @description Human-readable status; `No error` on success.
+             */
             msg: string;
-            /** Now */
+            /**
+             * Now
+             * @description Time the data was generated, in **Unix milliseconds**.
+             */
             now: number;
-            /** Ptime */
+            /**
+             * Ptime
+             * @description Milliseconds spent building the response.
+             */
             ptime: number;
-            /** Total */
+            /**
+             * Total
+             * @description Number of aircraft in `ac`.
+             */
             total: number;
         };
-        /** ValidationError */
+        /**
+         * ValidationError
+         * @description One field-level reason the request was rejected.
+         */
         ValidationError: {
-            /** Location */
+            /**
+             * Location
+             * @description Path to the offending field; the first element names the source (`path`, `query`, `body`).
+             */
             loc: (string | number)[];
-            /** Message */
+            /**
+             * Message
+             * @description What is wrong with it.
+             */
             msg: string;
-            /** Error Type */
+            /**
+             * Error Type
+             * @description Machine-readable error kind.
+             */
             type: string;
-            /** Input */
+            /**
+             * Input
+             * @description The value that was received.
+             */
             input?: unknown;
-            /** Context */
+            /**
+             * Context
+             * @description Extra context, when the check provides any.
+             */
             ctx?: Record<string, never>;
         };
+        /**
+         * TraceResponse
+         * @description One aircraft's stored trace, as [readsb](https://github.com/wiedehopf/readsb/blob/dev/README-json.md#trace-jsons) writes it.
+         */
+        TraceResponse: {
+            /**
+             * Icao
+             * @description 24-bit ICAO address of the aircraft, 6 lowercase hex digits.
+             * @example 3c66b0
+             */
+            icao: string;
+            /**
+             * Registration
+             * @description Registration from the aircraft database, when known.
+             */
+            r?: string;
+            /**
+             * Type
+             * @description ICAO type code from the aircraft database, when known.
+             * @example A320
+             */
+            t?: string;
+            /**
+             * Db Flags
+             * @description Database bitfield: `1` military, `2` interesting, `4` PIA, `8` LADD.
+             */
+            dbFlags?: number;
+            /**
+             * Description
+             * @description Long type name from the aircraft database, when known.
+             */
+            desc?: string;
+            /**
+             * Registered owner or operator
+             * @description Registered owner or operator from the aircraft database, when known.
+             */
+            ownOp?: string;
+            /**
+             * Year
+             * @description Year of manufacture from the aircraft database, when known.
+             */
+            year?: string;
+            /**
+             * ADS-B version
+             * @description ADS-B version reported by the aircraft.
+             */
+            version?: number;
+            /**
+             * Timestamp
+             * @description Unix time of the first point, in seconds. Offsets in `trace` are relative to this.
+             */
+            timestamp: number;
+            /**
+             * Trace
+             * @description One entry per stored position; see access by index below.
+             */
+            trace: components["schemas"]["TracePoint"][];
+        };
+        /**
+         * TracePoint
+         * @description One trace position, stored as a positional array rather than an object.
+         *     Index: `0` seconds after `timestamp`, `1` latitude, `2` longitude,
+         *     `3` altitude in ft (or `"ground"`), `4` ground speed in kt,
+         *     `5` track in degrees (true heading when on the ground), `6` flags
+         *     bitfield (`1` position stale, `2` new leg, `4` geometric vertical rate,
+         *     `8` geometric altitude), `7` vertical rate in fpm, `8` extra aircraft
+         *     details (or `null`), `9` position source, `10` geometric altitude,
+         *     `11` geometric vertical rate, `12` indicated airspeed, `13` roll angle.
+         *     Fields from index `9` exist only in files generated in 2022 and later, so
+         *     the array length varies. Any of `3`-`13` can be `null`.
+         */
+        TracePoint: [
+            number,
+            number,
+            number,
+            number | string | null,
+            number | null,
+            number | null,
+            number,
+            number | null,
+            Record<string, never> | null,
+            string | null,
+            number | null,
+            number | null,
+            number | null,
+            number | null
+        ];
     };
-    responses: never;
+    responses: {
+        /** @description The caller is over its request quota for this path. The window that tripped is named in the body (per-second, per-minute, per-hour or per-day for unkeyed traffic; the key's tier windows for keyed traffic). Retry after the number of seconds in `Retry-After`. */
+        QuotaExceeded: {
+            headers: {
+                /** @description Seconds until the current window resets. */
+                "Retry-After"?: number;
+                [name: string]: unknown;
+            };
+            content: {
+                "text/plain": string;
+            };
+        };
+    };
     parameters: never;
     requestBodies: never;
     headers: never;
@@ -564,6 +978,7 @@ export interface operations {
                     "application/json": components["schemas"]["V2Response_Model"];
                 };
             };
+            429: components["responses"]["QuotaExceeded"];
         };
     };
     v2_mil_v2_mil_get: {
@@ -584,6 +999,7 @@ export interface operations {
                     "application/json": components["schemas"]["V2Response_Model"];
                 };
             };
+            429: components["responses"]["QuotaExceeded"];
         };
     };
     v2_ladd_v2_ladd_get: {
@@ -604,6 +1020,7 @@ export interface operations {
                     "application/json": components["schemas"]["V2Response_Model"];
                 };
             };
+            429: components["responses"]["QuotaExceeded"];
         };
     };
     v2_squawk_filter_v2_sqk__squawk__get: {
@@ -636,6 +1053,7 @@ export interface operations {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
+            429: components["responses"]["QuotaExceeded"];
         };
     };
     v2_squawk_filter_v2_squawk__squawk__get: {
@@ -668,6 +1086,7 @@ export interface operations {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
+            429: components["responses"]["QuotaExceeded"];
         };
     };
     v2_type_filter_v2_type__aircraft_type__get: {
@@ -700,6 +1119,7 @@ export interface operations {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
+            429: components["responses"]["QuotaExceeded"];
         };
     };
     v2_reg_filter_v2_reg__registration__get: {
@@ -732,6 +1152,7 @@ export interface operations {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
+            429: components["responses"]["QuotaExceeded"];
         };
     };
     v2_reg_filter_v2_registration__registration__get: {
@@ -764,6 +1185,7 @@ export interface operations {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
+            429: components["responses"]["QuotaExceeded"];
         };
     };
     v2_hex_filter_v2_icao__icao_hex__get: {
@@ -796,6 +1218,7 @@ export interface operations {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
+            429: components["responses"]["QuotaExceeded"];
         };
     };
     v2_hex_filter_v2_hex__icao_hex__get: {
@@ -828,6 +1251,7 @@ export interface operations {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
+            429: components["responses"]["QuotaExceeded"];
         };
     };
     v2_callsign_filter_v2_callsign__callsign__get: {
@@ -860,6 +1284,7 @@ export interface operations {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
+            429: components["responses"]["QuotaExceeded"];
         };
     };
     v2_point_v2_lat__lat__lon__lon__dist__radius__get: {
@@ -896,6 +1321,7 @@ export interface operations {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
+            429: components["responses"]["QuotaExceeded"];
         };
     };
     v2_point_v2_point__lat___lon___radius__get: {
@@ -932,6 +1358,7 @@ export interface operations {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
+            429: components["responses"]["QuotaExceeded"];
         };
     };
     v2_closest_v2_closest__lat___lon___radius__get: {
@@ -968,6 +1395,7 @@ export interface operations {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
+            429: components["responses"]["QuotaExceeded"];
         };
     };
     api_airport_api_0_airport__icao__get: {
@@ -999,6 +1427,7 @@ export interface operations {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
+            429: components["responses"]["QuotaExceeded"];
         };
     };
     api_routeset_api_0_routeset_post: {
@@ -1072,6 +1501,86 @@ export interface operations {
                     "application/json": unknown;
                 };
             };
+        };
+    };
+    api_trace_full_0_trace_full__icao_hex__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example 4ca87c */
+                icao_hex: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The stored trace, gzip-compressed JSON */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TraceResponse"];
+                };
+            };
+            /** @description No trace recorded for that address */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            429: components["responses"]["QuotaExceeded"];
+        };
+    };
+    api_trace_recent_0_trace_recent__icao_hex__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @example 4ca87c */
+                icao_hex: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The recent trace, gzip-compressed JSON */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TraceResponse"];
+                };
+            };
+            /** @description No trace recorded for that address */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            429: components["responses"]["QuotaExceeded"];
         };
     };
 }
